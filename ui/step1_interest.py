@@ -129,18 +129,18 @@ def _render_questions_form():
         answers[str(i)] = answer
         st.markdown("")
 
-    all_answered = all(a.strip() for a in answers.values())
+    any_answered = any(a.strip() for a in answers.values())
 
     if st.button(
         "📚 학습 자료 보기 →",
         type="primary",
         use_container_width=True,
-        disabled=not all_answered,
+        disabled=not any_answered,
     ):
         st.session_state.user_answers = answers
         st.session_state.step1_complete = True
         st.session_state.current_step = 2
         st.rerun()
 
-    if not all_answered:
-        st.caption("💬 모든 질문에 답하면 다음 단계로 진행할 수 있어요.")
+    if not any_answered:
+        st.caption("💬 하나 이상 답하면 다음 단계로 진행할 수 있어요.")

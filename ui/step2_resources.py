@@ -1,3 +1,5 @@
+from urllib.parse import quote
+
 import streamlit as st
 from core.resource_recommender import recommend
 
@@ -87,18 +89,30 @@ def _render_resources(resources: list):
             st.markdown("")
 
 
+def _get_link(r: dict) -> str:
+    source = r.get("source_url", "")
+    if source.startswith("http"):
+        return source
+    title = quote(r.get("title", ""))
+    rtype = r.get("type", "")
+    if rtype == "책":
+        return f"https://www.aladin.co.kr/search/wsearchresult.aspx?SearchTarget=Book&SearchWord={title}"
+    if rtype == "논문":
+        return f"https://scholar.google.com/scholar?q={title}"
+    if rtype == "영상":
+        return f"https://www.youtube.com/results?search_query={title}"
+    return f"https://www.google.com/search?q={title}"
+
+
 def _resource_card(r: dict):
     rtype = r.get("type", "기타")
     badge_cls, icon = _BADGE.get(rtype, ("badge-기타", "📌"))
     level = r.get("level", "")
     lc = _LEVEL_COLOR.get(level, "#6b7280")
     source = r.get("source_url", "")
-    is_url = source.startswith("http")
-    source_html = (
-        f'<a href="{source}" target="_blank" style="color:#3b82f6; font-size:12px; font-weight:600;">🔗 바로가기</a>'
-        if is_url
-        else f'<span style="font-size:12px; color:#6b7280;">📖 {source}</span>'
-    )
+    link = _get_link(r)
+    source_label = "바로가기" if source.startswith("http") else ("알라딘 검색" if rtype == "책" else "Scholar 검색" if rtype == "논문" else "검색")
+    source_html = f'<a href="{link}" target="_blank" style="color:#3b82f6; font-size:12px; font-weight:600;">🔗 {source_label}</a>'
 
     st.markdown(
         f"""<div class="resource-card">
