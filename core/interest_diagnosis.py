@@ -52,7 +52,7 @@ def diagnose(interest_text: str, grade: str, learning_type_id: str) -> dict:
     result = ask(
         system_prompt,
         f"학생의 관심사: {interest_text}",
-        max_tokens=2000,
+        max_tokens=8192,
         json_mode=True,
     )
 

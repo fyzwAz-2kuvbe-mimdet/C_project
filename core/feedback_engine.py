@@ -56,6 +56,6 @@ def analyze(student_text: str, learning_type_id: str, grade: str) -> dict:
     return ask(
         system_prompt,
         f"학생 제출 글:\n\n{student_text}",
-        max_tokens=3000,
+        max_tokens=8192,
         json_mode=True,
     )

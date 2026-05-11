@@ -56,7 +56,7 @@ def recommend(
 
     user_message = f"관심 주제: {refined_interest}\n\n학생 답변:\n{answers_text}"
 
-    result = ask(system_prompt, user_message, max_tokens=3000, json_mode=True)
+    result = ask(system_prompt, user_message, max_tokens=8192, json_mode=True)
 
     if isinstance(result, list):
         return result

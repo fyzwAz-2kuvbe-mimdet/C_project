@@ -29,7 +29,6 @@ def ask(
 
     generation_config = {
         "max_output_tokens": max_tokens,
-        "thinking_config": {"thinking_budget": 0},  # thinking 비활성화 → JSON 잘림 방지
     }
     if json_mode:
         generation_config["response_mime_type"] = "application/json"
