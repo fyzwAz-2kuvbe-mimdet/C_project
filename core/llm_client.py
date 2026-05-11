@@ -8,12 +8,10 @@ import streamlit as st
 
 _configured = False
 
-_RPM_LIMIT   = 15       # 분당 최대 요청 수
-_WINDOW      = 60.0     # 슬라이딩 윈도우 (초)
-_MAX_RETRIES = 3        # 429 발생 시 추가 재시도 횟수
-_RETRY_BASE  = 5.0      # 429 재시도 첫 대기(초)
+_RPM_LIMIT   = 14       # 안전 마진 포함 (실제 한도 15 - 1)
+_WINDOW      = 60.0     # 슬라이딩 윈도우(초)
+_MAX_RETRIES = 4        # 429 발생 시 최대 재시도 횟수
 
-# 최근 요청 타임스탬프 (프로세스 내 전역 — Streamlit 세션 간 공유)
 _req_times: collections.deque = collections.deque()
 
 
@@ -29,23 +27,35 @@ def _ensure_configured():
 
 
 def _wait_for_rate_limit():
-    """분당 15회 제한을 넘지 않도록 필요 시 대기."""
+    """분당 14회(안전 마진)를 넘지 않도록 필요 시 대기."""
     while True:
         now = time.time()
-        # 윈도우 밖 타임스탬프 제거
         while _req_times and now - _req_times[0] >= _WINDOW:
             _req_times.popleft()
-
         if len(_req_times) < _RPM_LIMIT:
-            break  # 여유 있음 → 즉시 진행
+            break
+        wait = _WINDOW - (now - _req_times[0]) + 1.0
+        st.toast(f"분당 요청 한도 도달 — {wait:.0f}초 대기 중...", icon="⏳")
+        time.sleep(min(wait, 5.0))
 
-        # 가장 오래된 요청이 윈도우를 벗어날 때까지 대기
-        wait = _WINDOW - (now - _req_times[0]) + 0.5  # 0.5초 여유
-        st.toast(
-            f"분당 요청 한도({_RPM_LIMIT}회) 도달 — {wait:.0f}초 대기 중...",
-            icon="⏳",
-        )
-        time.sleep(min(wait, 5.0))   # 최대 5초씩 끊어서 대기
+
+def _parse_retry_delay(err: str) -> float:
+    """에러 메시지에서 재시도 권장 대기 시간(초) 추출."""
+    patterns = [
+        r"retry in (\d+(?:\.\d+)?)s",                            # "Please retry in 45.62s"
+        r"retry_delay\s*\{\s*seconds:\s*(\d+(?:\.\d+)?)\s*\}",   # "retry_delay { seconds: 45 }"
+        r'"seconds":\s*(\d+(?:\.\d+)?)',                           # JSON {"seconds": 45}
+        r"retryDelay['\"]?\s*[:=]\s*['\"]?(\d+(?:\.\d+)?)",      # retryDelay: 45
+    ]
+    for pat in patterns:
+        m = re.search(pat, err, re.IGNORECASE)
+        if m:
+            return float(m.group(1))
+    return 0.0
+
+
+def _is_daily_quota(err: str) -> bool:
+    return "PerDay" in err or "per_day" in err.lower()
 
 
 def ask(
@@ -66,35 +76,42 @@ def ask(
         generation_config=generation_config,
     )
 
-    retry_wait = _RETRY_BASE
-    for attempt in range(1, _MAX_RETRIES + 2):  # +1 for initial attempt
-        _wait_for_rate_limit()   # 호출 전 RPM 체크
+    for attempt in range(1, _MAX_RETRIES + 2):
+        _wait_for_rate_limit()
 
         try:
-            _req_times.append(time.time())   # 요청 시각 기록
+            _req_times.append(time.time())
             response = model.generate_content(user_message)
-
             if json_mode:
                 return json.loads(_extract_json(response.text))
             return response.text
 
         except Exception as e:
-            _req_times.pop()     # 실패한 요청은 카운트에서 제외
+            _req_times.pop()   # 실패 요청은 카운트 제외
             err = str(e)
-            is_rate_limit = "429" in err or "quota" in err.lower() or "rate" in err.lower()
+            is_quota = "429" in err or "quota" in err.lower() or "rate" in err.lower()
 
-            if is_rate_limit and attempt <= _MAX_RETRIES:
-                m = re.search(r"retryDelay['\"]?\s*[:=]\s*['\"]?(\d+(?:\.\d+)?)", err)
-                suggested = float(m.group(1)) if m else 0.0
-                delay = max(retry_wait, suggested + 1.0)
-                st.toast(
-                    f"API 한도 초과 — {delay:.0f}초 후 재시도 ({attempt}/{_MAX_RETRIES})",
-                    icon="⏳",
-                )
-                time.sleep(delay)
-                retry_wait *= 2
-            else:
+            if not is_quota or attempt > _MAX_RETRIES:
                 raise
+
+            delay = _parse_retry_delay(err)
+            daily = _is_daily_quota(err)
+
+            if daily:
+                # 일일 한도: Google이 제시한 대기 시간 사용, 없으면 60초
+                delay = delay if delay > 0 else 60.0
+                msg = (
+                    f"일일 API 요청 한도(20회) 초과 — "
+                    f"{delay:.0f}초 후 재시도합니다 ({attempt}/{_MAX_RETRIES}). "
+                    f"한도가 지속되면 유료 플랜 전환을 권장합니다."
+                )
+            else:
+                # 분당 한도: 최소 5초, Google 제시값 우선
+                delay = max(delay, 5.0 * attempt)
+                msg = f"분당 요청 한도 초과 — {delay:.0f}초 후 재시도합니다 ({attempt}/{_MAX_RETRIES})"
+
+            st.toast(msg, icon="⏳")
+            time.sleep(delay)
 
 
 def _extract_json(text: str) -> str:
