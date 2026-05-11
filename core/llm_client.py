@@ -27,24 +27,42 @@ def ask(
 ):
     _ensure_configured()
 
-    generation_config = {"max_output_tokens": max_tokens}
+    generation_config = {
+        "max_output_tokens": max_tokens,
+        "thinking_config": {"thinking_budget": 0},  # thinking 비활성화 → JSON 잘림 방지
+    }
     if json_mode:
         generation_config["response_mime_type"] = "application/json"
 
     model = genai.GenerativeModel(
-        model_name="gemini-2.5-flash",
+        model_name="gemini-2.5-flash-lite",
         system_instruction=system_prompt,
         generation_config=generation_config,
     )
     response = model.generate_content(user_message)
 
     if json_mode:
-        return json.loads(_strip_fences(response.text))
+        return json.loads(_extract_json(response.text))
     return response.text
 
 
-def _strip_fences(text: str) -> str:
+def _extract_json(text: str) -> str:
     text = text.strip()
+    # 마크다운 코드블록 제거
     text = re.sub(r"^```(?:json)?\s*", "", text)
     text = re.sub(r"\s*```$", "", text)
-    return text.strip()
+    text = text.strip()
+
+    # { } 또는 [ ] 범위만 추출 (앞뒤 불필요한 텍스트 제거)
+    for start_ch, end_ch in [("{", "}"), ("[", "]")]:
+        start = text.find(start_ch)
+        end = text.rfind(end_ch)
+        if start != -1 and end != -1 and end > start:
+            candidate = text[start : end + 1]
+            try:
+                json.loads(candidate)
+                return candidate
+            except json.JSONDecodeError:
+                continue
+
+    return text
