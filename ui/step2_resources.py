@@ -111,8 +111,19 @@ def _resource_card(r: dict):
     lc = _LEVEL_COLOR.get(level, "#6b7280")
     source = r.get("source_url", "")
     link = _get_link(r)
-    source_label = "바로가기" if source.startswith("http") else ("알라딘 검색" if rtype == "책" else "Scholar 검색" if rtype == "논문" else "검색")
-    source_html = f'<a href="{link}" target="_blank" style="color:#3b82f6; font-size:12px; font-weight:600;">🔗 {source_label}</a>'
+    if source.startswith("http"):
+        source_label = "바로가기"
+        caution = ""
+    elif rtype == "책":
+        source_label = "알라딘 검색"
+        caution = " <span style='font-size:10px;color:#f59e0b;'>※검색 후 실존 확인</span>"
+    elif rtype == "논문":
+        source_label = "Scholar 검색"
+        caution = " <span style='font-size:10px;color:#f59e0b;'>※검색 후 실존 확인</span>"
+    else:
+        source_label = "검색"
+        caution = ""
+    source_html = f'<a href="{link}" target="_blank" style="color:#3b82f6; font-size:12px; font-weight:600;">🔗 {source_label}</a>{caution}'
 
     st.markdown(
         f"""<div class="resource-card">
