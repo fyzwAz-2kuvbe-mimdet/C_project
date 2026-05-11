@@ -1,66 +1,47 @@
 import streamlit as st
 
 st.set_page_config(
-    page_title="AI 학습 코치",
+    page_title="AI 학습 멘토",
     page_icon="🎓",
     layout="wide",
     initial_sidebar_state="expanded",
 )
 
-from ui.styles import inject_css, render_step_indicator  # noqa: E402 — after set_page_config
+from ui.styles import inject_css
+from ui.progress import render_progress
 from ui.sidebar import render_sidebar
-from ui.step1_interest import render_step1
-from ui.step2_resources import render_step2
-from ui.step3_news import render_step3
-from ui.step4_feedback import render_step4
-from utils.session import init_session, generate_download_report
+from ui.step01_type_grade import render as step01
+from ui.step02_interest_input import render as step02
+from ui.step03_follow_up import render as step03
+from ui.step04_roadmap_view import render as step04
+from ui.step05_resource_view import render as step05
+from ui.step06_news_view import render as step06
+from ui.step07_question_view import render as step07
+from ui.step08_upload import render as step08
+from ui.step09_feedback_view import render as step09
+from ui.step10_summary import render as step10
+from utils.session import init_session
 
-# ── CSS must be first ──
 inject_css()
 
-# ── API key guard ──
 if "GEMINI_API_KEY" not in st.secrets:
-    st.error("⚠️ GEMINI_API_KEY가 설정되지 않았습니다. .streamlit/secrets.toml을 확인하세요.")
+    st.error("⚠️ GEMINI_API_KEY가 설정되지 않았습니다.")
     st.info(
-        """**설정 방법**
-1. `.streamlit/secrets.toml.example` 파일을 복사해 `.streamlit/secrets.toml`로 저장하세요.
-2. 파일 안의 `your_gemini_api_key_here`를 실제 키로 교체하세요.
-3. API 키는 [Google AI Studio](https://aistudio.google.com/app/apikey)에서 무료 발급받을 수 있습니다."""
+        "Streamlit Cloud → Settings → Secrets에서 `GEMINI_API_KEY = \"your_key\"`를 추가하세요.\n\n"
+        "API 키는 [Google AI Studio](https://aistudio.google.com/app/apikey)에서 무료 발급받을 수 있습니다."
     )
     st.stop()
 
-# ── Session state ──
 init_session()
 
-# ── Sidebar ──
 with st.sidebar:
     render_sidebar()
 
-# ── Step indicator ──
-render_step_indicator(st.session_state.current_step)
+step = st.session_state.get("current_step", 1)
+render_progress(step)
 
-# ── Step routing ──
-step = st.session_state.current_step
-if step == 1:
-    render_step1()
-elif step == 2:
-    render_step2()
-elif step == 3:
-    render_step3()
-elif step == 4:
-    render_step4()
-
-# ── Download report (available from step 2 onwards after resources loaded) ──
-if st.session_state.get("step2_complete") or st.session_state.get("feedback"):
-    st.markdown("---")
-    col1, col2, col3 = st.columns([1, 2, 1])
-    with col2:
-        report = generate_download_report()
-        safe_name = st.session_state.get("interest_text", "학습")[:20].replace(" ", "_")
-        st.download_button(
-            label="📄 전체 학습 리포트 다운로드 (.md)",
-            data=report,
-            file_name=f"학습리포트_{safe_name}.md",
-            mime="text/markdown",
-            use_container_width=True,
-        )
+_STEPS = {
+    1: step01, 2: step02, 3: step03, 4: step04, 5: step05,
+    6: step06, 7: step07, 8: step08, 9: step09, 10: step10,
+}
+_STEPS.get(step, step01)()

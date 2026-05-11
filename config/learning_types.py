@@ -11,7 +11,7 @@ LEARNING_TYPES = {
             {"key": "specificity", "label": "구체적 개념명을 적시했는가", "weight": 25},
             {"key": "limit_awareness", "label": "한계 인식 및 확장 의지가 보이는가", "weight": 25},
         ],
-        "question_style": "왜 그렇게 되는지 수학적/논리적으로 설명할 수 있어?",
+        "extra_resources": "관련 수학·과학 경시 문제 및 올림피아드 자료",
         "preferred_sources": ["대학 공개강의", "교과서 심화", "수학/과학 저널"],
     },
     "minsa": {
@@ -26,7 +26,7 @@ LEARNING_TYPES = {
             {"key": "multi_perspective", "label": "다양한 관점을 비교·분석했는가", "weight": 25},
             {"key": "proposal", "label": "해결책 또는 자신의 입장을 제시했는가", "weight": 25},
         ],
-        "question_style": "이 주제를 세계적인 관점에서 바라보면 어떤 시사점이 있을까?",
+        "extra_resources": "관련 영문 기사(BBC/NYT) 및 TED 강연 추천",
         "preferred_sources": ["해외 학술지", "TED Talks", "글로벌 뉴스(BBC/NYT)", "국제기구 보고서"],
     },
     "sciencehigh": {
@@ -41,7 +41,7 @@ LEARNING_TYPES = {
             {"key": "advanced_math", "label": "심화 수학 개념을 적용했는가", "weight": 25},
             {"key": "originality", "label": "기존 연구와 차별화된 시각이 있는가", "weight": 25},
         ],
-        "question_style": "어떤 실험이나 데이터로 이 가설을 검증할 수 있을까?",
+        "extra_resources": "관련 실험 사례, 논문 초록 및 KISTEP 보고서",
         "preferred_sources": ["arXiv", "PubMed", "사이언스 저널", "KISTEP 보고서"],
     },
     "foreign": {
@@ -56,7 +56,7 @@ LEARNING_TYPES = {
             {"key": "humanities_depth", "label": "인문학적 개념(역사/철학/문학)을 연결했는가", "weight": 25},
             {"key": "narrative", "label": "논리적이고 설득력 있는 서술인가", "weight": 25},
         ],
-        "question_style": "이 주제가 언어와 문화에 어떤 영향을 미치는지 설명해줄 수 있어?",
+        "extra_resources": "관련 인문·사회 칼럼 및 문화비평 자료",
         "preferred_sources": ["인문학 도서", "언어학 저널", "문화비평 매체", "외국어 원전"],
     },
 }
