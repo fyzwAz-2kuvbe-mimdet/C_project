@@ -34,6 +34,19 @@ if "GEMINI_API_KEY" not in st.secrets:
 
 init_session()
 
+# ── Progress bar 클릭 → 단계 이동 ──────────────────────────────────
+_nav = st.query_params.get("nav_to")
+if _nav is not None:
+    try:
+        _target = int(_nav)
+        _cur = st.session_state.get("current_step", 1)
+        if 1 <= _target < _cur:          # 완료된 단계만 이동 허용
+            st.session_state.current_step = _target
+    except (ValueError, TypeError):
+        pass
+    st.query_params.clear()
+    st.rerun()
+
 with st.sidebar:
     render_sidebar()
 

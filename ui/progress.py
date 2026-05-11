@@ -13,91 +13,103 @@ _PHASES = [
     (4, "Phase 4 성찰", [9, 10]),
 ]
 
-_PHASE_COLORS = {1: "#3b82f6", 2: "#8b5cf6", 3: "#10b981", 4: "#f59e0b"}
+_PC = {1: "#3b82f6", 2: "#8b5cf6", 3: "#10b981", 4: "#f59e0b"}
+_STEP_PC = {s: _PC[pn] for pn, _, steps in _PHASES for s in steps}
+
+STEP_W = 52   # px — each step cell width
+CONN_W = 18   # px — connector cell width
 
 
 def render_progress(current_step: int):
     ph_row: list[str] = []
-    circ_row: list[str] = []
-    name_row: list[str] = []
+    data_row: list[str] = []
 
-    for idx, (phase_num, phase_name, phase_steps) in enumerate(_PHASES):
-        pc = _PHASE_COLORS[phase_num]
-        min_s, max_s = min(phase_steps), max(phase_steps)
+    for idx, (pn, pname, psteps) in enumerate(_PHASES):
+        pc = _PC[pn]
+        done_ph  = current_step > max(psteps)
+        active_ph = min(psteps) <= current_step <= max(psteps)
+        ph_c = "#10b981" if done_ph else (pc if active_ph else "#d1d5db")
 
-        if current_step > max_s:
-            ph_c = "#10b981"
-        elif current_step >= min_s:
-            ph_c = pc
-        else:
-            ph_c = "#d1d5db"
-
-        span = 2 * len(phase_steps) - 1
+        span = 2 * len(psteps) - 1
         ph_row.append(
-            f'<td colspan="{span}" style="text-align:center;padding:0 4px 6px;'
-            f'border-bottom:2px solid {ph_c};font-size:9px;font-weight:700;'
-            f'color:{ph_c};letter-spacing:.04em;">{phase_name}</td>'
+            f'<td colspan="{span}" style="border:0;text-align:center;padding:0 0 6px;'
+            f'border-bottom:2px solid {ph_c} !important;font-size:9px;font-weight:700;'
+            f'color:{ph_c};white-space:nowrap;letter-spacing:.03em;">{pname}</td>'
         )
 
-        for i, step_num in enumerate(phase_steps):
-            name = _STEPS[step_num]
+        for i, sn in enumerate(psteps):
+            name = _STEPS[sn]
+            done   = sn < current_step
+            active = sn == current_step
 
-            if step_num < current_step:
+            if done:
                 cbg, cfg, ct = "#10b981", "#fff", "✓"
                 lc, lw = "#10b981", "600"
-            elif step_num == current_step:
-                cbg, cfg, ct = pc, "#fff", str(step_num)
+                shadow = "filter:drop-shadow(0 1px 3px #10b98155);"
+            elif active:
+                cbg, cfg, ct = pc, "#fff", str(sn)
                 lc, lw = pc, "700"
+                shadow = f"box-shadow:0 0 0 4px {pc}28;"
             else:
-                cbg, cfg, ct = "#f3f4f6", "#9ca3af", str(step_num)
+                cbg, cfg, ct = "#f3f4f6", "#9ca3af", str(sn)
                 lc, lw = "#9ca3af", "400"
+                shadow = ""
 
-            shadow = f"box-shadow:0 0 0 4px {pc}22;" if step_num == current_step else ""
-
-            circ_row.append(
-                f'<td style="padding:6px 3px 0;text-align:center;vertical-align:middle;">'
-                f'<div style="width:30px;height:30px;border-radius:50%;background:{cbg};color:{cfg};'
+            circle = (
+                f'<div style="width:34px;height:34px;border-radius:50%;'
+                f'background:{cbg};color:{cfg};{shadow}'
                 f'display:flex;align-items:center;justify-content:center;'
-                f'font-size:12px;font-weight:700;margin:0 auto;{shadow}">{ct}</div></td>'
+                f'font-size:13px;font-weight:700;margin:0 auto;">{ct}</div>'
             )
-            name_row.append(
-                f'<td style="padding:4px 3px 0;text-align:center;vertical-align:top;">'
-                f'<span style="font-size:9px;color:{lc};font-weight:{lw};'
-                f'white-space:nowrap;">{name}</span></td>'
+            label = (
+                f'<div style="font-size:9px;color:{lc};font-weight:{lw};'
+                f'white-space:nowrap;text-align:center;margin-top:5px;">{name}</div>'
             )
 
-            # 페이즈 내 연결선
-            if i < len(phase_steps) - 1:
-                nxt = phase_steps[i + 1]
-                cline = "#10b981" if nxt <= current_step else "#e5e7eb"
-                circ_row.append(
-                    f'<td style="padding:6px 0 0;vertical-align:middle;">'
-                    f'<div style="height:2px;background:{cline};min-width:16px;"></div></td>'
+            if done:
+                inner = (
+                    f'<a href="?nav_to={sn}" style="text-decoration:none;display:block;'
+                    f'cursor:pointer;" title="{sn}단계 · {name}으로 이동">'
+                    f'{circle}{label}</a>'
                 )
-                name_row.append('<td></td>')
+            else:
+                inner = circle + label
 
-        # 페이즈 간 연결선 (마지막 페이즈 제외)
+            data_row.append(
+                f'<td style="border:0;width:{STEP_W}px;padding:8px 4px 10px;'
+                f'text-align:center;vertical-align:top;">{inner}</td>'
+            )
+
+            # Within-phase connector
+            if i < len(psteps) - 1:
+                nxt = psteps[i + 1]
+                cline = "#10b981" if nxt <= current_step else "#e5e7eb"
+                data_row.append(
+                    f'<td style="border:0;width:{CONN_W}px;padding:0;vertical-align:middle;">'
+                    f'<div style="height:2px;background:{cline};"></div></td>'
+                )
+
+        # Phase-boundary connector
         if idx < len(_PHASES) - 1:
             next_first = _PHASES[idx + 1][2][0]
             cline = "#10b981" if next_first <= current_step else "#e5e7eb"
-            circ_row.append(
-                f'<td style="padding:6px 2px 0;vertical-align:middle;">'
-                f'<div style="height:2px;background:{cline};min-width:10px;'
-                f'border-left:3px solid #fff;border-right:3px solid #fff;"></div></td>'
+            data_row.append(
+                f'<td style="border:0;width:{CONN_W}px;padding:0;vertical-align:middle;">'
+                f'<div style="height:2px;background:{cline};'
+                f'border-left:4px solid #fafafa;border-right:4px solid #fafafa;"></div></td>'
             )
-            name_row.append('<td></td>')
             ph_row.append(
-                f'<td style="padding:0 2px 6px;border-bottom:2px solid #e5e7eb;min-width:10px;"></td>'
+                f'<td style="border:0;border-bottom:2px solid #e5e7eb !important;'
+                f'width:{CONN_W}px;padding:0 0 6px;"></td>'
             )
 
     html = (
         '<div style="background:#fff;border-bottom:1px solid #e5e7eb;'
-        'padding:12px 16px 10px;margin-bottom:20px;overflow-x:auto;">'
+        'padding:12px 0 0;margin-bottom:20px;overflow-x:auto;">'
         '<table cellspacing="0" cellpadding="0" '
-        'style="border-collapse:collapse;margin:0 auto;">'
+        'style="border-collapse:collapse;border:0;margin:0 auto;">'
         f'<tr>{"".join(ph_row)}</tr>'
-        f'<tr>{"".join(circ_row)}</tr>'
-        f'<tr>{"".join(name_row)}</tr>'
+        f'<tr>{"".join(data_row)}</tr>'
         '</table></div>'
     )
     st.markdown(html, unsafe_allow_html=True)
