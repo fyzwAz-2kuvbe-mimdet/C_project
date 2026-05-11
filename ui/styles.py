@@ -16,68 +16,7 @@ body { background: #fafafa; }
   padding-bottom: 5rem;
 }
 
-/* ── Phase progress bar ── */
-.progress-outer {
-  background: #fff;
-  border-bottom: 1px solid #e5e7eb;
-  padding: 16px 0 12px;
-  margin-bottom: 24px;
-}
-.progress-inner {
-  display: flex;
-  justify-content: center;
-  align-items: flex-start;
-  gap: 6px;
-  flex-wrap: nowrap;
-}
-.phase-group {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 6px;
-}
-.phase-label {
-  font-size: 10px;
-  font-weight: 700;
-  color: #9ca3af;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-  white-space: nowrap;
-}
-.phase-steps {
-  display: flex;
-  align-items: center;
-  gap: 0;
-}
-.step-node {
-  width: 32px; height: 32px;
-  border-radius: 50%;
-  display: flex; align-items: center; justify-content: center;
-  font-size: 13px; font-weight: 700;
-  background: #e5e7eb; color: #9ca3af;
-  flex-shrink: 0;
-}
-.step-node.done   { background: #10b981; color: #fff; }
-.step-node.active {
-  background: #3b82f6; color: #fff;
-  box-shadow: 0 0 0 4px rgba(59,130,246,.2);
-  animation: pulse 2s infinite;
-}
-@keyframes pulse {
-  0%,100% { box-shadow: 0 0 0 4px rgba(59,130,246,.2); }
-  50%      { box-shadow: 0 0 0 7px rgba(59,130,246,.08); }
-}
-.step-line {
-  width: 24px; height: 2px;
-  background: #e5e7eb; flex-shrink: 0;
-}
-.step-line.done { background: #10b981; }
-.phase-sep {
-  width: 20px; height: 2px;
-  background: #d1d5db;
-  margin-top: 15px;
-  flex-shrink: 0;
-}
+/* ── Stepper (progress bar) — 인라인 스타일로 렌더링, CSS 불필요 ── */
 
 /* ── Cards ── */
 .coach-card {
