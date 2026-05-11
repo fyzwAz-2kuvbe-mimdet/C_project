@@ -1,4 +1,5 @@
 import json
+import re
 import streamlit as st
 import google.generativeai as genai
 
@@ -38,5 +39,12 @@ def ask(
     response = model.generate_content(user_message)
 
     if json_mode:
-        return json.loads(response.text)
+        return json.loads(_strip_fences(response.text))
     return response.text
+
+
+def _strip_fences(text: str) -> str:
+    text = text.strip()
+    text = re.sub(r"^```(?:json)?\s*", "", text)
+    text = re.sub(r"\s*```$", "", text)
+    return text.strip()
