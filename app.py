@@ -40,7 +40,7 @@ if _nav is not None:
     try:
         _target = int(_nav)
         _cur = st.session_state.get("current_step", 1)
-        if 1 <= _target < _cur:          # 완료된 단계만 이동 허용
+        if 1 <= _target <= 10:
             st.session_state.current_step = _target
     except (ValueError, TypeError):
         pass

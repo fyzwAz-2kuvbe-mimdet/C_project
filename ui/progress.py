@@ -66,14 +66,11 @@ def render_progress(current_step: int):
                 f'white-space:nowrap;text-align:center;margin-top:5px;">{name}</div>'
             )
 
-            if done:
-                inner = (
-                    f'<a href="?nav_to={sn}" style="text-decoration:none;display:block;'
-                    f'cursor:pointer;" title="{sn}단계 · {name}으로 이동">'
-                    f'{circle}{label}</a>'
-                )
-            else:
-                inner = circle + label
+            inner = (
+                f'<a href="?nav_to={sn}" style="text-decoration:none;display:block;'
+                f'cursor:pointer;" title="{sn}단계 · {name}으로 이동">'
+                f'{circle}{label}</a>'
+            )
 
             data_row.append(
                 f'<td style="border:0;width:{STEP_W}px;padding:8px 4px 10px;'
