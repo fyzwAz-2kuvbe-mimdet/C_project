@@ -1,7 +1,7 @@
 import streamlit as st
 from config.learning_types import get_criteria
 from core.step09_feedback import build_prompt
-from utils.ai_runner import prompt_panel
+from utils.ai_runner import prompt_panel, reset_result
 
 
 def render():
@@ -27,7 +27,7 @@ def render():
     if not isinstance(feedback, dict):
         st.warning("첨삭 데이터가 올바르지 않아요. 다시 시도해주세요.")
         if st.button("다시 시도"):
-            st.session_state.feedback = None
+            reset_result("feedback")
             st.rerun()
         return
 

@@ -1,7 +1,7 @@
 import streamlit as st
 import urllib.parse
 from core.step05_resources import build_prompt
-from utils.ai_runner import prompt_panel
+from utils.ai_runner import prompt_panel, reset_result
 
 _TYPE_COLORS = {
     "책": ("#dbeafe", "#1d4ed8"),
@@ -36,7 +36,7 @@ def render():
     if not isinstance(resources, dict):
         st.warning("자료 데이터가 올바르지 않아요. 다시 생성해주세요.")
         if st.button("다시 생성"):
-            st.session_state.resources = None
+            reset_result("resources")
             st.rerun()
         return
 

@@ -26,10 +26,19 @@ def render():
                             spinner_text="AI가 질문을 생성하고 있어요...",
                             btn_label="질문 생성하기"):
             return
-        # 질문이 새로 생성되면 답변 인덱스 초기화
         st.session_state.q3_idx = 0
         st.session_state.user_answers = {}
         questions = st.session_state.follow_up_questions
+
+    # dict {"questions": [...]} 형태로 저장된 경우 리스트로 정규화
+    if isinstance(questions, dict):
+        questions = questions.get("questions", [])
+        st.session_state.follow_up_questions = questions
+
+    if not questions:
+        st.warning("질문을 불러오지 못했어요. 다시 생성해주세요.")
+        st.session_state.follow_up_questions = None
+        st.rerun()
 
     # ── 2단계: 한 번에 하나씩 질문 ────────────────────
     refined = st.session_state.get("refined_topic")
@@ -43,8 +52,8 @@ def render():
 
 def _render_one_by_one(questions: list, interest: str, grade: str, lt: str):
     answers = st.session_state.get("user_answers") or {}
-    idx = st.session_state.get("q3_idx", 0)
     total = len(questions)
+    idx = min(st.session_state.get("q3_idx", 0), total)
 
     if idx < total:
         # 진행률 표시

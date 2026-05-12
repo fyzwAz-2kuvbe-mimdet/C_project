@@ -7,8 +7,8 @@ import requests
 from config.learning_types import get_type
 from core.llm_client import ask
 from prompts.mentoring_prompts import (
-    GRADE_TONE_GUIDE, STEP06_EXTRA_RESOURCES, STEP06_NEWS_SUMMARY,
-    SYSTEM_BASE, TYPE_QUESTION_STYLE,
+    GRADE_TONE_GUIDE, STEP06_EXTRA_RESOURCES, STEP06_NEWS_BATCH_SUMMARY,
+    STEP06_NEWS_SUMMARY, SYSTEM_BASE, TYPE_QUESTION_STYLE,
 )
 
 _HEADERS = {
@@ -101,6 +101,20 @@ def _build_system(grade: str, learning_type_id: str) -> str:
 
 
 # ── 뉴스 3줄 요약 ──
+
+def build_batch_summarize_prompt(news_items: list, grade: str, learning_type_id: str) -> tuple:
+    """N개의 뉴스를 하나의 프롬프트로 묶어 단건 API 호출로 처리."""
+    lines = []
+    for i, item in enumerate(news_items):
+        lines.append(f"[뉴스 {i}]")
+        lines.append(f"제목: {item.get('headline', '')}")
+        snippet = item.get("summary", "")
+        if snippet:
+            lines.append(f"미리보기: {snippet[:200]}")
+        lines.append("")
+    user = STEP06_NEWS_BATCH_SUMMARY.format(news_list="\n".join(lines))
+    return _build_system(grade, learning_type_id), user
+
 
 def build_summarize_prompt(headline: str, summary: str, grade: str, learning_type_id: str) -> tuple:
     user = STEP06_NEWS_SUMMARY.format(headline=headline, summary=summary or "내용 미리보기 없음")

@@ -30,14 +30,24 @@ def render():
         st.session_state.question_answers = {}
         questions = st.session_state.core_questions
 
+    # dict {"questions": [...]} 형태로 저장된 경우 리스트로 정규화
+    if isinstance(questions, dict):
+        questions = questions.get("questions", [])
+        st.session_state.core_questions = questions
+
+    if not questions:
+        st.warning("질문을 불러오지 못했어요. 다시 생성해주세요.")
+        st.session_state.core_questions = None
+        st.rerun()
+
     # ── 2단계: 한 번에 하나씩 답변 ────────────────────
     _render_one_by_one(questions)
 
 
 def _render_one_by_one(questions: list):
     answers = st.session_state.get("question_answers") or {}
-    idx = st.session_state.get("q7_idx", 0)
     total = len(questions)
+    idx = min(st.session_state.get("q7_idx", 0), total)
 
     if idx < total:
         # 진행률

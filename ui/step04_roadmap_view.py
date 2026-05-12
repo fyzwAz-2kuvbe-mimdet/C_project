@@ -1,6 +1,6 @@
 import streamlit as st
 from core.step04_roadmap import build_prompt
-from utils.ai_runner import prompt_panel
+from utils.ai_runner import prompt_panel, reset_result
 
 
 def render():
@@ -27,7 +27,7 @@ def render():
     if not isinstance(roadmap, list) or not roadmap:
         st.warning("로드맵 데이터가 올바르지 않아요. 다시 생성해주세요.")
         if st.button("다시 생성"):
-            st.session_state.roadmap = None
+            reset_result("roadmap")
             st.rerun()
         return
 
