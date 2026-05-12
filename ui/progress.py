@@ -67,7 +67,7 @@ def render_progress(current_step: int):
             )
 
             inner = (
-                f'<a href="?nav_to={sn}" style="text-decoration:none;display:block;'
+                f'<a href="?nav_to={sn}" target="_top" style="text-decoration:none;display:block;'
                 f'cursor:pointer;" title="{sn}단계 · {name}으로 이동">'
                 f'{circle}{label}</a>'
             )
