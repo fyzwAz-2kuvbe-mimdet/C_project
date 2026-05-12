@@ -1,6 +1,6 @@
 import streamlit as st
-from core.step02_initial_analysis import analyze
-
+from core.step02_initial_analysis import build_prompt
+from utils.ai_runner import prompt_panel
 
 _PLACEHOLDERS = {
     "초": "예: 공룡이 왜 멸종했는지, 로봇이 움직이는 방법...",
@@ -19,12 +19,15 @@ def render():
 
     grade = st.session_state.get("grade", "고1")
     placeholder = _PLACEHOLDERS.get(grade[:1], _PLACEHOLDERS["고"])
-    interest = st.text_area("관심 주제", value=st.session_state.get("interest_text", ""),
-                            placeholder=placeholder, height=120, label_visibility="collapsed")
+    interest = st.text_area(
+        "관심 주제",
+        value=st.session_state.get("interest_text", ""),
+        placeholder=placeholder,
+        height=120,
+        label_visibility="collapsed",
+    )
 
     col1, col2 = st.columns([4, 1])
-    with col1:
-        analyze_btn = st.button("🔍 AI 분석", type="primary", use_container_width=True, disabled=not interest.strip())
     with col2:
         if st.button("초기화", use_container_width=True):
             st.session_state.interest_text = ""
@@ -32,16 +35,25 @@ def render():
             st.session_state.step2_confirmed = False
             st.rerun()
 
-    if analyze_btn and interest.strip():
-        with st.spinner("AI가 관심사를 분석하고 있어요..."):
-            try:
-                result = analyze(interest.strip(), grade, st.session_state.learning_type)
-                st.session_state.interest_text = interest.strip()
-                st.session_state.initial_analysis = result
-                st.session_state.step2_confirmed = False
-                st.rerun()
-            except Exception as e:
-                st.error(f"분석 중 오류: {e}")
+    if interest.strip() and interest.strip() != st.session_state.get("interest_text", ""):
+        st.session_state.interest_text = interest.strip()
+        st.session_state.initial_analysis = None
+
+    if not interest.strip():
+        st.info("관심 주제를 입력하면 AI 분석을 시작할 수 있어요.")
+        return
+
+    st.session_state.interest_text = interest.strip()
+    st.markdown("---")
+    st.markdown("**AI 분석**")
+
+    lt = st.session_state.get("learning_type", "hana")
+    system, prompt = build_prompt(interest.strip(), grade, lt)
+
+    if not prompt_panel(system, prompt, "initial_analysis",
+                        spinner_text="AI가 관심사를 분석하고 있어요...",
+                        btn_label="🔍 AI 분석 시작"):
+        return
 
     analysis = st.session_state.get("initial_analysis")
     if analysis:
@@ -56,7 +68,6 @@ def _render_analysis(analysis: dict):
     depth_colors = {"초급": ("#d1fae5", "#065f46"), "중급": ("#fef3c7", "#92400e"), "고급": ("#ede9fe", "#5b21b6")}
     bg, text = depth_colors.get(depth, ("#f3f4f6", "#374151"))
 
-    st.markdown("---")
     st.markdown("**AI 분석 결과**")
     col1, col2 = st.columns(2)
     with col1:
@@ -85,11 +96,16 @@ def _render_analysis(analysis: dict):
         if st.button("✅ 맞아요, 다음으로", type="primary", use_container_width=True):
             st.session_state.step2_confirmed = True
             st.session_state.current_step = 3
-            # reset downstream
-            for k in ["follow_up_questions","user_answers","refined_topic","roadmap",
-                      "resources","news_items","extra_resources","news_summaries",
-                      "core_questions","question_answers","student_text","feedback","next_step_result"]:
-                st.session_state[k] = None if k not in ("user_answers","news_summaries","question_answers") else {}
+            for k in ["follow_up_questions", "user_answers", "q3_idx", "refined_topic",
+                      "roadmap", "resources", "news_items", "extra_resources",
+                      "news_summaries", "core_questions", "question_answers",
+                      "q7_idx", "student_text", "feedback", "next_step_result"]:
+                if k in ("user_answers", "news_summaries", "question_answers"):
+                    st.session_state[k] = {}
+                elif k in ("q3_idx", "q7_idx"):
+                    st.session_state[k] = 0
+                else:
+                    st.session_state[k] = None
             st.rerun()
     with col_no:
         if st.button("✏️ 수정할게요", use_container_width=True):

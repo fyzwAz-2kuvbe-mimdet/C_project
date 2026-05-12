@@ -1,5 +1,9 @@
 import streamlit as st
-from core.step06_news import get_extra_resources, search_news, summarize_news
+from core.step06_news import (
+    build_extra_resources_prompt, build_summarize_prompt,
+    get_extra_resources, search_news, summarize_news,
+)
+from utils.ai_runner import prompt_panel
 
 
 def render():
@@ -11,10 +15,11 @@ def render():
     st.markdown('<div class="section-subheader">주제와 관련된 최신 뉴스와 추가 자료예요.</div>', unsafe_allow_html=True)
 
     grade = st.session_state.get("grade", "고1")
-    learning_type = st.session_state.get("learning_type", "hana")
+    lt = st.session_state.get("learning_type", "hana")
     refined = st.session_state.get("refined_topic") or {}
     topic = refined.get("refined_topic", st.session_state.get("interest_text", ""))
 
+    # 뉴스 크롤링 (AI 불필요, 웹 스크래핑)
     news_items = st.session_state.get("news_items")
     if news_items is None:
         with st.spinner("최신 뉴스를 가져오고 있어요..."):
@@ -26,12 +31,12 @@ def render():
     if news_items:
         st.markdown("**최신 뉴스**")
         for idx, item in enumerate(news_items):
-            _render_news_card(idx, item, summaries, grade, learning_type)
+            _render_news_card(idx, item, summaries, grade, lt)
     else:
-        st.info("관련 뉴스를 찾지 못했어요. 검색어를 바꿔 시도해보세요.")
+        st.info("관련 뉴스를 찾지 못했어요.")
 
     st.markdown("---")
-    _render_extra(topic, grade, learning_type)
+    _render_extra(topic, grade, lt)
 
     st.markdown("")
     if st.button("❓ 핵심 질문 보기 →", type="primary", use_container_width=True):
@@ -54,21 +59,22 @@ def _render_news_card(idx: int, item: dict, summaries: dict, grade: str, lt: str
         unsafe_allow_html=True,
     )
 
-    col_btn, _ = st.columns([1, 3])
-    with col_btn:
-        btn_key = f"summarize_{idx}"
-        if str(idx) not in summaries:
-            if st.button("📋 3줄 요약", key=btn_key, use_container_width=True):
-                with st.spinner("요약 중..."):
-                    try:
-                        s = summarize_news(headline, item.get("summary", ""), grade, lt)
-                        summaries[str(idx)] = s
-                        st.session_state.news_summaries = summaries
-                        st.rerun()
-                    except Exception as e:
-                        st.error(f"요약 오류: {e}")
-
-    if str(idx) in summaries:
+    if str(idx) not in summaries:
+        col_btn, _ = st.columns([1, 3])
+        with col_btn:
+            # 3줄 요약도 dual mode 지원
+            with st.expander("📋 3줄 요약", expanded=False):
+                system, prompt = build_summarize_prompt(
+                    headline, item.get("summary", ""), grade, lt
+                )
+                summary_key = f"news_sum_{idx}"
+                if prompt_panel(system, prompt, summary_key,
+                                json_mode=False,
+                                spinner_text="요약 중...",
+                                btn_label="요약하기"):
+                    summaries[str(idx)] = st.session_state[summary_key]
+                    st.session_state.news_summaries = summaries
+    else:
         st.markdown(
             f'<div class="news-summary-box">{summaries[str(idx)]}</div>',
             unsafe_allow_html=True,
@@ -76,26 +82,27 @@ def _render_news_card(idx: int, item: dict, summaries: dict, grade: str, lt: str
 
 
 def _render_extra(topic: str, grade: str, lt: str):
-    extra = st.session_state.get("extra_resources")
-    if extra is None:
-        with st.spinner("추가 자료를 불러오는 중..."):
-            try:
-                extra = get_extra_resources(topic, grade, lt)
-                st.session_state.extra_resources = extra
-            except Exception as e:
-                st.error(f"추가 자료 오류: {e}")
-                return
+    st.markdown("**유형별 추가 자료**")
 
-    items = extra.get("items", [])
-    if not items:
+    system, prompt = build_extra_resources_prompt(topic, grade, lt)
+    if not prompt_panel(system, prompt, "extra_resources",
+                        spinner_text="추가 자료를 불러오는 중...",
+                        btn_label="추가 자료 불러오기"):
         return
 
-    st.markdown("**유형별 추가 자료**")
+    items = (st.session_state.extra_resources or {}).get("items", [])
+    if not items:
+        st.caption("추가 자료가 없습니다.")
+        return
+
     for item in items:
-        name = item.get("name", "")
+        name = item.get("name", item.get("title", ""))
         desc = item.get("description", "")
         url = item.get("url", "")
-        link_html = f' &nbsp;<a href="{url}" target="_blank" style="font-size:12px;color:#3b82f6;">🔗 바로가기</a>' if url else ""
+        link_html = (
+            f' &nbsp;<a href="{url}" target="_blank" style="font-size:12px;color:#3b82f6;">🔗 바로가기</a>'
+            if url and url != "출처 미확인" else ""
+        )
         st.markdown(
             f'<div style="background:#f8fafc;border-radius:8px;padding:12px 14px;margin-bottom:8px;">'
             f'  <div style="font-size:14px;font-weight:700;color:#111827;">{name}{link_html}</div>'

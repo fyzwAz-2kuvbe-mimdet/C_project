@@ -1,7 +1,7 @@
 import streamlit as st
-from core.step05_resources import recommend
 import urllib.parse
-
+from core.step05_resources import build_prompt
+from utils.ai_runner import prompt_panel
 
 _TYPE_COLORS = {
     "책": ("#dbeafe", "#1d4ed8"),
@@ -21,20 +21,24 @@ def render():
     st.markdown('<div class="section-subheader">로드맵 단계별 맞춤 자료를 모았어요.</div>', unsafe_allow_html=True)
 
     grade = st.session_state.get("grade", "고1")
-    learning_type = st.session_state.get("learning_type", "hana")
+    lt = st.session_state.get("learning_type", "hana")
     refined = st.session_state.get("refined_topic") or {}
     topic = refined.get("refined_topic", st.session_state.get("interest_text", ""))
     roadmap = st.session_state.get("roadmap") or []
 
-    resources = st.session_state.get("resources")
-    if not resources:
-        with st.spinner("AI가 단계별 자료를 추천하고 있어요..."):
-            try:
-                resources = recommend(roadmap, topic, grade, learning_type)
-                st.session_state.resources = resources
-            except Exception as e:
-                st.error(f"자료 추천 중 오류: {e}")
-                return
+    system, prompt = build_prompt(roadmap, topic, grade, lt)
+    if not prompt_panel(system, prompt, "resources",
+                        spinner_text="AI가 단계별 자료를 추천하고 있어요...",
+                        btn_label="📚 자료 추천받기"):
+        return
+
+    resources = st.session_state.resources
+    if not isinstance(resources, dict):
+        st.warning("자료 데이터가 올바르지 않아요. 다시 생성해주세요.")
+        if st.button("다시 생성"):
+            st.session_state.resources = None
+            st.rerun()
+        return
 
     _render_resources(resources, roadmap)
 
@@ -48,10 +52,11 @@ def _render_resources(resources: dict, roadmap: list):
     per_step = resources.get("per_step", {})
     general = resources.get("general", [])
 
+    # AI가 단계별로 키를 숫자 문자열로 반환하면 그대로 사용, 없으면 로드맵 순서 기준
     for i, step in enumerate(roadmap):
         step_num = str(step.get("step_number", i + 1))
-        step_title = step.get("step_title", f"단계 {i+1}")
-        step_items = per_step.get(step_num, per_step.get(str(i+1), []))
+        step_title = step.get("step_title") or step.get("goal", f"단계 {i+1}")
+        step_items = per_step.get(step_num, per_step.get(str(i + 1), []))
 
         with st.expander(f"**{i+1}단계: {step_title}**  ({len(step_items)}개)", expanded=(i == 0)):
             if step_items:
@@ -70,21 +75,19 @@ def _render_card(item: dict):
     rtype = item.get("type", "기타")
     title = item.get("title", "")
     author = item.get("author", "")
-    desc = item.get("description", "")
-    url = item.get("url", "")
-    is_search = item.get("is_search_link", False)
+    desc = item.get("description", item.get("why", ""))
+    url = item.get("url", item.get("source_url", ""))
 
     bg, fg = _TYPE_COLORS.get(rtype, _TYPE_COLORS["기타"])
     badge = f'<span class="badge" style="background:{bg};color:{fg};">{rtype}</span>'
-    caveat = (
-        ' <span style="font-size:10px;color:#9ca3af;">(검색 링크 — 실존 확인 필요)</span>'
-        if is_search else ""
-    )
 
-    if not url:
+    is_search = not url or url == "출처 미확인"
+    if is_search:
         url = _auto_url(rtype, title, author)
-        is_search = True
-
+    caveat = (
+        ' <span style="font-size:10px;color:#9ca3af;">(검색 링크)</span>'
+        if is_search and url else ""
+    )
     link_html = (
         f'<a href="{url}" target="_blank" style="color:#3b82f6;font-weight:600;font-size:13px;">'
         f'🔗 바로가기{caveat}</a>'

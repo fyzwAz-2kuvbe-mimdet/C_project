@@ -64,6 +64,19 @@ div[data-testid="stButton"] button { border-radius: 8px; font-weight: 600; trans
 div[data-testid="stButton"] button:hover { transform: translateY(-1px); }
 div[data-testid="stTextArea"] textarea { border-radius: 8px; border-color: #e5e7eb; font-size: 14px; }
 #MainMenu, footer { visibility: hidden; }
+section[data-testid="stSidebar"] div[data-testid="stColumn"] div[data-testid="stButton"] button {
+  border-radius: 50% !important;
+  width: 34px !important;
+  height: 34px !important;
+  min-height: 34px !important;
+  padding: 0 !important;
+  font-size: 12px !important;
+  font-weight: 700 !important;
+  line-height: 1 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
 """
 
 

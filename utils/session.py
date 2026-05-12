@@ -11,6 +11,7 @@ _DEFAULTS = {
     # step 3
     "follow_up_questions": None,
     "user_answers": {},
+    "q3_idx": 0,
     "refined_topic": None,
     "step3_confirmed": False,
     # step 4
@@ -24,6 +25,7 @@ _DEFAULTS = {
     # step 7
     "core_questions": None,
     "question_answers": {},
+    "q7_idx": 0,
     # step 8
     "student_text": "",
     "format_type": "에세이",

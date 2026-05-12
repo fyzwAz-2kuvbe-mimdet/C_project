@@ -1,5 +1,6 @@
 import streamlit as st
-from core.step10_next_step import suggest_next
+from core.step10_next_step import build_prompt
+from utils.ai_runner import prompt_panel
 from utils.markdown_export import build_markdown
 
 
@@ -12,21 +13,19 @@ def render():
     st.markdown('<div class="section-subheader">탐구 여정을 마무리하고 다음 방향을 확인해요.</div>', unsafe_allow_html=True)
 
     grade = st.session_state.get("grade", "고1")
-    learning_type = st.session_state.get("learning_type", "hana")
+    lt = st.session_state.get("learning_type", "hana")
     refined = st.session_state.get("refined_topic") or {}
     topic = refined.get("refined_topic", st.session_state.get("interest_text", ""))
     feedback = st.session_state.get("feedback") or {}
     overall_score = feedback.get("overall_score", 0)
 
-    next_result = st.session_state.get("next_step_result")
-    if not next_result:
-        with st.spinner("AI가 다음 탐구 방향을 제안하고 있어요..."):
-            try:
-                next_result = suggest_next(topic, overall_score, grade, learning_type)
-                st.session_state.next_step_result = next_result
-            except Exception as e:
-                st.error(f"다음 방향 생성 오류: {e}")
+    system, prompt = build_prompt(topic, overall_score, grade, lt)
+    if not prompt_panel(system, prompt, "next_step_result",
+                        spinner_text="AI가 다음 탐구 방향을 제안하고 있어요...",
+                        btn_label="🌱 다음 방향 제안받기"):
+        return
 
+    next_result = st.session_state.next_step_result
     if next_result:
         _render_next(next_result)
 
@@ -37,35 +36,45 @@ def render():
 
 
 def _render_next(nr: dict):
-    next_topic = nr.get("next_topic", "")
-    reason = nr.get("reason", "")
+    next_dir = nr.get("next_direction", nr.get("next_topic", ""))
     expansion = nr.get("expansion_topics", [])
     activities = nr.get("suggested_activities", [])
 
-    if next_topic:
+    if next_dir:
         st.markdown("**다음 탐구 방향**")
         st.markdown(
-            f'<div style="background:#eff6ff;border-left:5px solid #3b82f6;border-radius:0 12px 12px 0;padding:16px 20px;margin-bottom:12px;">'
-            f'  <div style="font-size:18px;font-weight:800;color:#1e40af;">{next_topic}</div>'
-            f'  {"<div style=\"font-size:13px;color:#374151;margin-top:6px;\">" + reason + "</div>" if reason else ""}'
+            f'<div style="background:#eff6ff;border-left:5px solid #3b82f6;border-radius:0 12px 12px 0;'
+            f'padding:16px 20px;margin-bottom:12px;">'
+            f'<div style="font-size:15px;font-weight:600;color:#1e40af;line-height:1.6;">{next_dir}</div>'
             f'</div>',
             unsafe_allow_html=True,
         )
 
     if expansion:
         st.markdown("**확장 주제**")
-        tags = "".join(
-            f'<span style="background:#dbeafe;color:#1d4ed8;border-radius:20px;padding:4px 12px;'
-            f'font-size:13px;font-weight:600;margin:3px;display:inline-block;">{t}</span>'
-            for t in expansion
-        )
-        st.markdown(f'<div style="margin-bottom:12px;">{tags}</div>', unsafe_allow_html=True)
+        tags_html = ""
+        for t in expansion:
+            if isinstance(t, dict):
+                label = t.get("topic", "")
+                conn = t.get("connection", "")
+                tags_html += (
+                    f'<span title="{conn}" style="background:#dbeafe;color:#1d4ed8;border-radius:20px;'
+                    f'padding:4px 12px;font-size:13px;font-weight:600;margin:3px;display:inline-block;'
+                    f'cursor:default;">{label}</span>'
+                )
+            else:
+                tags_html += (
+                    f'<span style="background:#dbeafe;color:#1d4ed8;border-radius:20px;'
+                    f'padding:4px 12px;font-size:13px;font-weight:600;margin:3px;display:inline-block;">{t}</span>'
+                )
+        st.markdown(f'<div style="margin-bottom:12px;">{tags_html}</div>', unsafe_allow_html=True)
 
     if activities:
         st.markdown("**추천 활동**")
         for act in activities:
             st.markdown(
-                f'<div style="background:#f8fafc;border-radius:8px;padding:10px 14px;margin-bottom:6px;font-size:13px;color:#374151;">→ {act}</div>',
+                f'<div style="background:#f8fafc;border-radius:8px;padding:10px 14px;margin-bottom:6px;'
+                f'font-size:13px;color:#374151;">→ {act}</div>',
                 unsafe_allow_html=True,
             )
 

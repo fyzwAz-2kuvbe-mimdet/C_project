@@ -1,5 +1,6 @@
 import streamlit as st
-from core.step07_core_questions import generate_core_questions
+from core.step07_core_questions import build_prompt
+from utils.ai_runner import prompt_panel
 
 
 def render():
@@ -8,46 +9,106 @@ def render():
         st.rerun()
 
     st.markdown('<div class="section-header">❓ 핵심 탐구 질문</div>', unsafe_allow_html=True)
-    st.markdown('<div class="section-subheader">이 질문들에 자신의 생각을 써보세요. 결과물 작성의 뼈대가 됩니다.</div>', unsafe_allow_html=True)
+    st.markdown('<div class="section-subheader">질문에 하나씩 답하면 결과물 작성의 뼈대가 됩니다.</div>', unsafe_allow_html=True)
 
     grade = st.session_state.get("grade", "고1")
-    learning_type = st.session_state.get("learning_type", "hana")
+    lt = st.session_state.get("learning_type", "hana")
     refined = st.session_state.get("refined_topic") or {}
     topic = refined.get("refined_topic", st.session_state.get("interest_text", ""))
     keywords = refined.get("key_concepts", [])
 
+    # ── 1단계: 핵심 질문 생성 ──────────────────────────
     questions = st.session_state.get("core_questions")
     if not questions:
-        with st.spinner("AI가 핵심 탐구 질문을 생성하고 있어요..."):
-            try:
-                questions = generate_core_questions(topic, keywords, grade, learning_type)
-                st.session_state.core_questions = questions
-            except Exception as e:
-                st.error(f"질문 생성 중 오류: {e}")
-                return
+        st.markdown("**AI가 탐구 주제에 맞는 핵심 질문을 생성합니다.**")
+        system, prompt = build_prompt(topic, keywords, grade, lt)
+        if not prompt_panel(system, prompt, "core_questions",
+                            spinner_text="AI가 핵심 질문을 생성하고 있어요...",
+                            btn_label="핵심 질문 생성하기"):
+            return
+        st.session_state.q7_idx = 0
+        st.session_state.question_answers = {}
+        questions = st.session_state.core_questions
 
-    q_answers = st.session_state.get("question_answers") or {}
-    new_answers = {}
+    # ── 2단계: 한 번에 하나씩 답변 ────────────────────
+    _render_one_by_one(questions)
 
-    for i, q in enumerate(questions):
+
+def _render_one_by_one(questions: list):
+    answers = st.session_state.get("question_answers") or {}
+    idx = st.session_state.get("q7_idx", 0)
+    total = len(questions)
+
+    if idx < total:
+        # 진행률
         st.markdown(
-            f'<div style="background:#eff6ff;border-left:5px solid #3b82f6;border-radius:0 10px 10px 0;'
-            f'padding:12px 16px;margin-bottom:6px;">'
-            f'<div style="font-size:12px;font-weight:700;color:#3b82f6;margin-bottom:4px;">핵심 질문 {i+1}</div>'
-            f'<div style="font-size:15px;font-weight:600;color:#1e40af;">{q}</div>'
+            f'<div style="background:#f3f4f6;border-radius:999px;height:6px;margin-bottom:16px;">'
+            f'<div style="background:#10b981;width:{int(idx/total*100)}%;height:100%;border-radius:999px;"></div>'
             f'</div>',
             unsafe_allow_html=True,
         )
-        new_answers[str(i)] = st.text_area(
-            f"답변 {i+1}", value=q_answers.get(str(i), ""),
-            height=100, key=f"cq_{i}", label_visibility="collapsed",
-            placeholder="자유롭게 생각을 적어보세요...",
+        st.markdown(
+            f'<div style="font-size:12px;color:#6b7280;margin-bottom:8px;">핵심 질문 {idx+1} / {total}</div>',
+            unsafe_allow_html=True,
         )
-        st.markdown("")
 
-    st.session_state.question_answers = new_answers
-    any_answered = any(v.strip() for v in new_answers.values())
+        q = questions[idx]
+        st.markdown(
+            f'<div style="background:#eff6ff;border-left:5px solid #3b82f6;border-radius:0 12px 12px 0;'
+            f'padding:16px 20px;margin-bottom:12px;">'
+            f'<div style="font-size:12px;font-weight:700;color:#3b82f6;margin-bottom:6px;">핵심 질문 {idx+1}</div>'
+            f'<div style="font-size:16px;font-weight:600;color:#1e40af;">{q}</div>'
+            f'</div>',
+            unsafe_allow_html=True,
+        )
 
+        saved = answers.get(str(idx), "")
+        answer = st.text_area(
+            "답변",
+            value=saved,
+            height=140,
+            key=f"q7_ans_{idx}",
+            placeholder="자신의 생각을 자유롭게 써보세요. 완벽하지 않아도 괜찮아요.",
+            label_visibility="collapsed",
+        )
+        answers[str(idx)] = answer
+        st.session_state.question_answers = answers
+
+        col_skip, col_next = st.columns([1, 2])
+        with col_skip:
+            if st.button("건너뛰기", use_container_width=True):
+                st.session_state.q7_idx = idx + 1
+                st.rerun()
+        with col_next:
+            if st.button(
+                "다음 질문 →" if idx < total - 1 else "답변 완료 ✓",
+                type="primary",
+                use_container_width=True,
+                disabled=not answer.strip(),
+            ):
+                st.session_state.q7_idx = idx + 1
+                st.rerun()
+        return
+
+    # 모든 질문 완료 → 답변 요약
+    st.markdown("**내 답변 요약**")
+    for i, q in enumerate(questions):
+        a = answers.get(str(i), "").strip()
+        st.markdown(
+            f'<div style="background:#f8fafc;border-radius:10px;padding:12px 16px;margin-bottom:8px;">'
+            f'<div style="font-size:11px;font-weight:700;color:#6b7280;margin-bottom:4px;">Q{i+1}. {q}</div>'
+            f'<div style="font-size:13px;color:#374151;">{a if a else "(미작성)"}</div>'
+            f'</div>',
+            unsafe_allow_html=True,
+        )
+
+    if st.button("✏️ 답변 다시하기", use_container_width=False):
+        st.session_state.q7_idx = 0
+        st.session_state.question_answers = {}
+        st.rerun()
+
+    st.markdown("")
+    any_answered = any(answers.get(str(i), "").strip() for i in range(len(questions)))
     if st.button("✍️ 결과물 작성하기 →", type="primary", use_container_width=True, disabled=not any_answered):
         st.session_state.current_step = 8
         st.rerun()

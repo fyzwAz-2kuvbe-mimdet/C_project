@@ -21,9 +21,9 @@ def _system(grade: str, learning_type_id: str) -> str:
     )
 
 
-def generate_questions(
+def build_questions_prompt(
     interest: str, estimated_subtopic: str, grade: str, learning_type_id: str
-) -> list:
+) -> tuple:
     info = get_type(learning_type_id)
     user = STEP03_FOLLOW_UP_QUESTIONS.format(
         interest=interest,
@@ -32,20 +32,23 @@ def generate_questions(
         type_name=info["name"],
         question_style=TYPE_QUESTION_STYLE[learning_type_id],
     )
-    result = ask(_system(grade, learning_type_id), user, json_mode=True)
+    return _system(grade, learning_type_id), user
+
+
+def generate_questions(
+    interest: str, estimated_subtopic: str, grade: str, learning_type_id: str
+) -> list:
+    system, user = build_questions_prompt(interest, estimated_subtopic, grade, learning_type_id)
+    result = ask(system, user, json_mode=True)
     questions = result.get("questions", [])
     if len(questions) < 3:
         questions += ["이 주제에서 특히 어떤 부분이 가장 궁금한가요?"] * (3 - len(questions))
     return questions[:5]
 
 
-def refine_topic(
-    interest: str,
-    questions: list,
-    answers: dict,
-    grade: str,
-    learning_type_id: str,
-) -> dict:
+def build_refine_prompt(
+    interest: str, questions: list, answers: dict, grade: str, learning_type_id: str
+) -> tuple:
     info = get_type(learning_type_id)
     qa_pairs = "\n".join(
         f"Q: {q}\nA: {answers.get(str(i), '(미답변)')}"
@@ -58,4 +61,11 @@ def refine_topic(
         type_name=info["name"],
         type_core=info["core"],
     )
-    return ask(_system(grade, learning_type_id), user, json_mode=True)
+    return _system(grade, learning_type_id), user
+
+
+def refine_topic(
+    interest: str, questions: list, answers: dict, grade: str, learning_type_id: str,
+) -> dict:
+    system, user = build_refine_prompt(interest, questions, answers, grade, learning_type_id)
+    return ask(system, user, json_mode=True)

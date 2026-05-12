@@ -90,35 +90,42 @@ def _parse_date(raw: str) -> str:
     return raw or "날짜 미상"
 
 
-# ── 뉴스 3줄 요약 ──
-
-def summarize_news(headline: str, summary: str, grade: str, learning_type_id: str) -> str:
+def _build_system(grade: str, learning_type_id: str) -> str:
     info = get_type(learning_type_id)
     gg = "초등" if grade.startswith("초") else ("중등" if grade.startswith("중") else "고등")
-    system = SYSTEM_BASE.format(
+    return SYSTEM_BASE.format(
         type_name=info["name"], type_core=info["core"], grade=grade,
         tone_guide=GRADE_TONE_GUIDE[gg],
         question_style=TYPE_QUESTION_STYLE[learning_type_id],
     )
+
+
+# ── 뉴스 3줄 요약 ──
+
+def build_summarize_prompt(headline: str, summary: str, grade: str, learning_type_id: str) -> tuple:
     user = STEP06_NEWS_SUMMARY.format(headline=headline, summary=summary or "내용 미리보기 없음")
+    return _build_system(grade, learning_type_id), user
+
+
+def summarize_news(headline: str, summary: str, grade: str, learning_type_id: str) -> str:
+    system, user = build_summarize_prompt(headline, summary, grade, learning_type_id)
     return ask(system, user, max_tokens=512, json_mode=False)
 
 
 # ── 유형별 추가 자료 ──
 
-def get_extra_resources(refined_topic: str, grade: str, learning_type_id: str) -> dict:
+def build_extra_resources_prompt(refined_topic: str, grade: str, learning_type_id: str) -> tuple:
     info = get_type(learning_type_id)
-    gg = "초등" if grade.startswith("초") else ("중등" if grade.startswith("중") else "고등")
-    system = SYSTEM_BASE.format(
-        type_name=info["name"], type_core=info["core"], grade=grade,
-        tone_guide=GRADE_TONE_GUIDE[gg],
-        question_style=TYPE_QUESTION_STYLE[learning_type_id],
-    )
     user = STEP06_EXTRA_RESOURCES.format(
         refined_topic=refined_topic,
         type_name=info["name"],
         extra_resource_desc=info.get("extra_resources", ""),
         grade=grade,
     )
+    return _build_system(grade, learning_type_id), user
+
+
+def get_extra_resources(refined_topic: str, grade: str, learning_type_id: str) -> dict:
+    system, user = build_extra_resources_prompt(refined_topic, grade, learning_type_id)
     result = ask(system, user, json_mode=True)
     return result if isinstance(result, dict) else {"items": []}
