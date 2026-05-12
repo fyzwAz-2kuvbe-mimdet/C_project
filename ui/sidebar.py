@@ -64,6 +64,20 @@ def render_sidebar():
         f"진행 단계: <strong style='color:#111827;'>{step}/10 — {_STEP_NAMES[step]}</strong></div>",
         unsafe_allow_html=True,
     )
+
+    # ── 단계 이동 ──
+    step_labels = [f"{k}. {v}" for k, v in _STEP_NAMES.items()]
+    selected_label = st.selectbox(
+        "단계 이동",
+        step_labels,
+        index=step - 1,
+        label_visibility="visible",
+    )
+    target_step = int(selected_label.split(".")[0])
+    if target_step != step:
+        st.session_state.current_step = target_step
+        st.rerun()
+
     if step > 1:
         if st.button("🔄 처음부터 다시", use_container_width=True):
             from utils.session import reset_all
