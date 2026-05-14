@@ -1,124 +1,157 @@
 import streamlit as st
-from core.step07_core_questions import build_prompt
-from utils.ai_runner import prompt_panel
+from core.step07_abstract import build_prompt
+from utils.ai_runner import prompt_panel, reset_result
 
 
 def render():
-    if st.button("← 이전"):
+    if st.button("← 이전", key="s7_back"):
         st.session_state.current_step = 6
         st.rerun()
 
-    st.markdown('<div class="section-header">핵심 탐구 질문</div>', unsafe_allow_html=True)
-    st.markdown('<div class="section-subheader">질문에 하나씩 답하면 결과물 작성의 뼈대가 됩니다.</div>', unsafe_allow_html=True)
+    st.markdown('<div class="section-header">AI 초록 생성</div>', unsafe_allow_html=True)
+    st.markdown('<div class="section-subheader">탐구 내용을 바탕으로 학술 초록 초안을 만들어드려요.</div>', unsafe_allow_html=True)
 
-    grade = st.session_state.get("grade", "고1")
-    lt = st.session_state.get("learning_type", "hana")
-    refined = st.session_state.get("refined_topic") or {}
-    topic = refined.get("refined_topic", st.session_state.get("interest_text", ""))
-    keywords = refined.get("key_concepts", [])
-
-    # ── 1단계: 핵심 질문 생성 ──────────────────────────
-    questions = st.session_state.get("core_questions")
-    if not questions:
-        st.markdown("**AI가 탐구 주제에 맞는 핵심 질문을 생성합니다.**")
-        system, prompt = build_prompt(topic, keywords, grade, lt)
-        if not prompt_panel(system, prompt, "core_questions",
-                            spinner_text="AI가 핵심 질문을 생성하고 있어요...",
-                            btn_label="핵심 질문 생성하기"):
-            return
-        st.session_state.q7_idx = 0
-        st.session_state.question_answers = {}
-        questions = st.session_state.core_questions
-
-    # dict {"questions": [...]} 형태로 저장된 경우 리스트로 정규화
-    if isinstance(questions, dict):
-        questions = questions.get("questions", [])
-        st.session_state.core_questions = questions
-
-    if not questions:
-        st.warning("질문을 불러오지 못했어요. 다시 생성해주세요.")
-        st.session_state.core_questions = None
-        st.rerun()
-
-    # ── 2단계: 한 번에 하나씩 답변 ────────────────────
-    _render_one_by_one(questions)
-
-
-def _render_one_by_one(questions: list):
-    answers = st.session_state.get("question_answers") or {}
-    total = len(questions)
-    idx = min(st.session_state.get("q7_idx", 0), total)
-
-    if idx < total:
-        # 진행률
-        st.markdown(
-            f'<div style="background:#dff0ec;border-radius:999px;height:6px;margin-bottom:16px;">'
-            f'<div style="background:#0d9488;width:{int(idx/total*100)}%;height:100%;border-radius:999px;"></div>'
-            f'</div>',
-            unsafe_allow_html=True,
-        )
-        st.markdown(
-            f'<div style="font-size:12px;color:#4b7772;margin-bottom:8px;">핵심 질문 {idx+1} / {total}</div>',
-            unsafe_allow_html=True,
-        )
-
-        q = questions[idx]
-        st.markdown(
-            f'<div style="background:#f0faf8;border-left:5px solid #0d9488;border-radius:0 12px 12px 0;'
-            f'padding:16px 20px;margin-bottom:12px;">'
-            f'<div style="font-size:12px;font-weight:700;color:#0d9488;margin-bottom:6px;">핵심 질문 {idx+1}</div>'
-            f'<div style="font-size:16px;font-weight:600;color:#0a5c52;">{q}</div>'
-            f'</div>',
-            unsafe_allow_html=True,
-        )
-
-        saved = answers.get(str(idx), "")
-        answer = st.text_area(
-            "답변",
-            value=saved,
-            height=140,
-            key=f"q7_ans_{idx}",
-            placeholder="자신의 생각을 자유롭게 써보세요. 완벽하지 않아도 괜찮아요.",
-            label_visibility="collapsed",
-        )
-        answers[str(idx)] = answer
-        st.session_state.question_answers = answers
-
-        col_skip, col_next = st.columns([1, 2])
-        with col_skip:
-            if st.button("건너뛰기", use_container_width=True):
-                st.session_state.q7_idx = idx + 1
-                st.rerun()
-        with col_next:
-            if st.button(
-                "다음 질문 →" if idx < total - 1 else "답변 완료 ✓",
-                type="primary",
-                use_container_width=True,
-                disabled=not answer.strip(),
-            ):
-                st.session_state.q7_idx = idx + 1
-                st.rerun()
+    topic = (st.session_state.get("selected_topic") or {}).get("name", "")
+    if not topic:
+        st.warning("선택된 주제가 없습니다. 처음 단계부터 시작해주세요.")
         return
 
-    # 모든 질문 완료 → 답변 요약
-    st.markdown("**내 답변 요약**")
-    for i, q in enumerate(questions):
-        a = answers.get(str(i), "").strip()
+    st.markdown(
+        f'<div style="background:#f0faf8;border:1px solid #c9e6e1;border-radius:10px;'
+        f'padding:10px 14px;font-size:13px;color:#374151;margin-bottom:14px;">'
+        f'<span style="color:#0d9488;font-weight:700;">탐구 주제:</span> {topic}</div>',
+        unsafe_allow_html=True,
+    )
+
+    st.markdown("**초록 작성을 위한 정보를 입력해주세요**")
+
+    motivation = st.text_area(
+        "탐구 동기",
+        value=st.session_state.get("s7_motivation", ""),
+        placeholder="이 주제를 탐구하게 된 출발점이 무엇인가요? 일상 관찰, 수업 경험 등...",
+        height=80,
+        label_visibility="visible",
+    )
+    if motivation != st.session_state.get("s7_motivation", ""):
+        st.session_state.s7_motivation = motivation
+        reset_result("s7_abstract")
+
+    key_findings = st.text_area(
+        "핵심 발견",
+        value=st.session_state.get("s7_key_findings", ""),
+        placeholder="탐구를 통해 알게 된 가장 중요한 것 2~3가지를 적어주세요.",
+        height=100,
+        label_visibility="visible",
+    )
+    if key_findings != st.session_state.get("s7_key_findings", ""):
+        st.session_state.s7_key_findings = key_findings
+        reset_result("s7_abstract")
+
+    limits_and_next = st.text_area(
+        "한계 및 후속 질문",
+        value=st.session_state.get("s7_limits_and_next", ""),
+        placeholder="이번 탐구에서 도달하지 못한 부분과 다음에 탐구하고 싶은 질문을 적어주세요.",
+        height=80,
+        label_visibility="visible",
+    )
+    if limits_and_next != st.session_state.get("s7_limits_and_next", ""):
+        st.session_state.s7_limits_and_next = limits_and_next
+        reset_result("s7_abstract")
+
+    study_notes = st.text_area(
+        "공부한 내용 (선택 사항)",
+        value=st.session_state.get("s7_study_notes", ""),
+        placeholder="공부한 내용을 추가로 적어주세요. 6단계에서 입력한 내용을 그대로 붙여 넣어도 됩니다.",
+        height=100,
+        label_visibility="visible",
+    )
+    if study_notes != st.session_state.get("s7_study_notes", ""):
+        st.session_state.s7_study_notes = study_notes
+        reset_result("s7_abstract")
+
+    if not st.session_state.get("s7_motivation", "").strip() or \
+       not st.session_state.get("s7_key_findings", "").strip():
         st.markdown(
-            f'<div style="background:#fff;border:1px solid #c9e6e1;border-radius:10px;padding:12px 16px;margin-bottom:8px;">'
-            f'<div style="font-size:11px;font-weight:700;color:#4b7772;margin-bottom:4px;">Q{i+1}. {q}</div>'
-            f'<div style="font-size:13px;color:#374151;">{a if a else "(미작성)"}</div>'
-            f'</div>',
+            '<div style="background:#f0faf8;border:1px solid #c9e6e1;border-radius:10px;'
+            'padding:12px;font-size:13px;color:#4b7772;margin-top:8px;">'
+            '탐구 동기와 핵심 발견을 입력하면 AI가 초록을 생성해요.</div>',
             unsafe_allow_html=True,
         )
+        return
 
-    if st.button("답변 다시하기", use_container_width=False):
-        st.session_state.q7_idx = 0
-        st.session_state.question_answers = {}
-        st.rerun()
+    st.markdown("---")
+    col_reset, _ = st.columns([1, 4])
+    with col_reset:
+        if st.button("다시 생성", key="reset_s7", use_container_width=True):
+            reset_result("s7_abstract")
+            st.rerun()
+
+    system, prompt_text = build_prompt(
+        topic,
+        st.session_state.get("s7_study_notes", ""),
+        st.session_state.get("s7_motivation", ""),
+        st.session_state.get("s7_key_findings", ""),
+        st.session_state.get("s7_limits_and_next", ""),
+    )
+    if not prompt_panel(system, prompt_text, "s7_abstract",
+                        spinner_text="AI가 초록을 작성하고 있어요...",
+                        btn_label="초록 생성"):
+        return
+
+    result = st.session_state.get("s7_abstract")
+    if not result:
+        return
+
+    _render_abstract(result)
 
     st.markdown("")
-    any_answered = any(answers.get(str(i), "").strip() for i in range(len(questions)))
-    if st.button("결과물 작성하기", type="primary", use_container_width=True, disabled=not any_answered):
+    if st.button("다음 단계", type="primary", use_container_width=True, key="s7_next"):
         st.session_state.current_step = 8
         st.rerun()
+
+
+def _render_abstract(data: dict):
+    abstract = data.get("abstract", {})
+    full_text = data.get("full_text", "")
+    check_points = data.get("check_points", [])
+
+    st.markdown("**AI 초록 초안**")
+
+    para_labels = [
+        ("motivation", "탐구 동기", "#0d9488"),
+        ("method", "탐구 내용 및 방법", "#0891b2"),
+        ("findings", "핵심 발견", "#059669"),
+        ("limits", "한계 인식", "#d97706"),
+        ("next_direction", "후속 탐구 방향", "#7c3aed"),
+    ]
+
+    for key, label, color in para_labels:
+        text = abstract.get(key, "")
+        if text:
+            st.markdown(
+                f'<div style="background:#f0faf8;border-left:4px solid {color};'
+                f'border-radius:0 8px 8px 0;padding:12px 14px;margin-bottom:8px;">'
+                f'<div style="font-size:11px;font-weight:700;color:{color};margin-bottom:4px;">{label}</div>'
+                f'<div style="font-size:13px;color:#374151;">{text}</div>'
+                f'</div>',
+                unsafe_allow_html=True,
+            )
+
+    if full_text:
+        with st.expander("완성 초록 전문 보기"):
+            st.markdown(
+                f'<div style="font-size:14px;color:#374151;line-height:1.8;'
+                f'background:#fff;border:1px solid #c9e6e1;border-radius:10px;padding:16px;">'
+                f'{full_text}</div>',
+                unsafe_allow_html=True,
+            )
+
+    if check_points:
+        st.markdown("**학생 확인 사항**")
+        for i, cp in enumerate(check_points, 1):
+            st.markdown(
+                f'<div style="background:#e8f5f3;border-radius:8px;padding:8px 14px;'
+                f'font-size:12px;color:#0a5c52;margin-bottom:6px;">'
+                f'{i}. {cp}</div>',
+                unsafe_allow_html=True,
+            )

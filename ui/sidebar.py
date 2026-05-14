@@ -1,19 +1,17 @@
 import streamlit as st
-from config.learning_types import get_all_types
 
 _GRADES = ["초4", "초5", "초6", "중1", "중2", "중3", "고1", "고2", "고3"]
 _STEP_NAMES = {
-    1: "유형선택", 2: "관심입력", 3: "주제구체화",
-    4: "로드맵",   5: "자료추천", 6: "뉴스·동향",
-    7: "핵심질문", 8: "결과작성", 9: "AI첨삭",   10: "성찰저장",
+    1: "관심구체화", 2: "주제추천",  3: "로드맵",
+    4: "자료탐색",  5: "트렌드",    6: "회고·계획",
+    7: "초록생성",  8: "글쓰기",    9: "지식지도",  10: "교과연결",
 }
 _PHASES = [
-    ("Phase 1", "#0d9488", [1, 2, 3]),
-    ("Phase 2", "#0891b2", [4, 5, 6]),
-    ("Phase 3", "#059669", [7, 8]),
+    ("Phase 1", "#0d9488", [1, 2]),
+    ("Phase 2", "#0891b2", [3, 4, 5]),
+    ("Phase 3", "#059669", [6, 7, 8]),
     ("Phase 4", "#0a5c52", [9, 10]),
 ]
-_STEP_COLOR = {s: c for _, c, steps in _PHASES for s in steps}
 
 
 def render_sidebar():
@@ -32,39 +30,27 @@ def render_sidebar():
     if grade != st.session_state.get("grade"):
         st.session_state.grade = grade
 
-    st.divider()
-
-    # ── 학습 유형 ──
-    st.markdown("**학습 유형**")
-    types = get_all_types()
-    type_ids = list(types.keys())
-    labels = [v['name'] for v in types.values()]
-    cur = st.session_state.get("learning_type", "hana")
-    sel = st.radio("유형", labels, index=type_ids.index(cur), label_visibility="collapsed")
-    sel_id = type_ids[labels.index(sel)]
-    if sel_id != cur:
-        st.session_state.learning_type = sel_id
-
-    # ── 유형 카드 ──
-    info = types[sel_id]
-    c = info["color"]
-    criteria_li = "".join(
-        f"<li style='font-size:11px;color:#374151;margin-bottom:3px;'>{cr['label']}</li>"
-        for cr in info["evaluation_criteria"]
-    )
-    st.markdown(
-        f"""<div style="border-left:4px solid {c};background:{c}11;border-radius:0 10px 10px 0;padding:12px 14px;margin-top:8px;">
-          <div style="font-size:13px;font-weight:700;color:{c};margin-bottom:3px;">{info['name']}</div>
-          <div style="font-size:11px;color:#374151;margin-bottom:6px;">{info['description']}</div>
-          <div style="font-size:10px;font-weight:700;color:#9ca3af;margin-bottom:3px;">평가 기준</div>
-          <ul style="margin:0;padding-left:13px;">{criteria_li}</ul>
-        </div>""",
-        unsafe_allow_html=True,
-    )
+    # ── 현재 탐구 주제 ──
+    selected = st.session_state.get("selected_topic") or {}
+    if selected.get("name"):
+        st.divider()
+        st.markdown("**탐구 주제**")
+        st.markdown(
+            f'<div style="background:#e8f5f3;border:1px solid #0d9488;border-radius:8px;'
+            f'padding:8px 12px;font-size:13px;font-weight:700;color:#0a5c52;">'
+            f'{selected["name"]}</div>',
+            unsafe_allow_html=True,
+        )
+        hook = selected.get("hook", "")
+        if hook:
+            st.markdown(
+                f'<div style="font-size:11px;color:#4b7772;margin-top:4px;">{hook}</div>',
+                unsafe_allow_html=True,
+            )
 
     st.divider()
 
-    # ── 단계 이동 (원형 버튼 그리드) ──
+    # ── 단계 이동 ──
     current = st.session_state.get("current_step", 1)
     st.markdown("**단계 이동**")
     _render_phase_labels()

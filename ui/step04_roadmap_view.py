@@ -1,77 +1,91 @@
 import streamlit as st
-from core.step04_roadmap import build_prompt
+from core.step04_resources import build_prompt
 from utils.ai_runner import prompt_panel, reset_result
 
 
 def render():
-    if st.button("← 이전"):
+    if st.button("← 이전", key="s4_back"):
         st.session_state.current_step = 3
         st.rerun()
 
-    st.markdown('<div class="section-header">학습 로드맵</div>', unsafe_allow_html=True)
-    st.markdown('<div class="section-subheader">AI가 설계한 단계별 탐구 여정이에요.</div>', unsafe_allow_html=True)
+    st.markdown('<div class="section-header">단계별 자료 탐색</div>', unsafe_allow_html=True)
+    st.markdown('<div class="section-subheader">각 학습 단계에 맞는 자료를 어디서 어떻게 찾는지 안내해드려요.</div>', unsafe_allow_html=True)
 
-    grade = st.session_state.get("grade", "고1")
-    lt = st.session_state.get("learning_type", "hana")
-    refined = st.session_state.get("refined_topic") or {}
-    topic = refined.get("refined_topic", st.session_state.get("interest_text", ""))
-    keywords = refined.get("key_concepts", [])
+    topic = (st.session_state.get("selected_topic") or {}).get("name", "")
+    roadmap_data = st.session_state.get("s3_roadmap") or {}
+    roadmap = roadmap_data.get("roadmap", [])
 
-    system, prompt = build_prompt(topic, keywords, grade, lt)
-    if not prompt_panel(system, prompt, "roadmap",
-                        spinner_text="AI가 학습 로드맵을 설계하고 있어요...",
-                        btn_label="로드맵 생성하기"):
+    if not topic or not roadmap:
+        st.warning("로드맵이 없습니다. 이전 단계로 돌아가 로드맵을 생성해주세요.")
         return
 
-    roadmap = st.session_state.roadmap
-    if not isinstance(roadmap, list) or not roadmap:
-        st.warning("로드맵 데이터가 올바르지 않아요. 다시 생성해주세요.")
-        if st.button("다시 생성"):
-            reset_result("roadmap")
+    st.markdown(
+        f'<div style="background:#f0faf8;border:1px solid #c9e6e1;border-radius:10px;'
+        f'padding:10px 14px;font-size:13px;color:#374151;margin-bottom:12px;">'
+        f'<span style="color:#0d9488;font-weight:700;">탐구 주제:</span> {topic}</div>',
+        unsafe_allow_html=True,
+    )
+
+    col_reset, _ = st.columns([1, 4])
+    with col_reset:
+        if st.button("다시 생성", key="reset_s4", use_container_width=True):
+            reset_result("s4_resources")
             st.rerun()
+
+    system, prompt_text = build_prompt(topic, roadmap)
+    if not prompt_panel(system, prompt_text, "s4_resources",
+                        spinner_text="AI가 자료 탐색 경로를 안내하고 있어요...",
+                        btn_label="자료 탐색 경로 안내받기"):
         return
 
-    _render_roadmap(roadmap)
+    resources_data = st.session_state.get("s4_resources") or {}
+    resources_by_step = resources_data.get("resources", {})
+    if not resources_by_step:
+        st.warning("자료를 불러오지 못했습니다. 다시 시도해주세요.")
+        return
+
+    st.markdown("**단계별 탐색 경로**")
+
+    for step in roadmap:
+        n = str(step.get("step_number", ""))
+        title = step.get("title", "")
+        items = resources_by_step.get(n, [])
+
+        with st.expander(f"단계 {n}: {title} ({len(items)}개 자료)"):
+            if not items:
+                st.markdown('<div style="color:#4b7772;font-size:13px;">자료 없음</div>', unsafe_allow_html=True)
+                continue
+            for item in items:
+                rtype = item.get("type", "")
+                level = item.get("level", "")
+                where = item.get("where", "")
+                keyword = item.get("search_keyword", "")
+                what_to_see = item.get("what_to_see", "")
+                connects_to = item.get("connects_to", "")
+
+                level_colors = {"입문": "#d1fae5", "중급": "#fef3c7", "심화": "#ede9fe"}
+                lc = level_colors.get(level, "#f0faf8")
+
+                st.markdown(
+                    f'<div style="background:#fff;border:1px solid #c9e6e1;border-radius:8px;'
+                    f'padding:12px 14px;margin-bottom:8px;">'
+                    f'<div style="display:flex;gap:8px;align-items:center;margin-bottom:6px;">'
+                    f'<span style="background:#0d9488;color:#fff;border-radius:4px;padding:2px 8px;font-size:11px;font-weight:700;">{rtype}</span>'
+                    f'<span style="background:{lc};border-radius:4px;padding:2px 8px;font-size:11px;">{level}</span>'
+                    f'</div>'
+                    f'<div style="font-size:12px;color:#374151;margin-bottom:4px;">'
+                    f'<b style="color:#0d9488;">어디서:</b> {where}</div>'
+                    f'<div style="font-size:12px;color:#374151;margin-bottom:4px;">'
+                    f'<b style="color:#0d9488;">검색어:</b> {keyword}</div>'
+                    f'<div style="font-size:12px;color:#374151;margin-bottom:4px;">'
+                    f'<b style="color:#0d9488;">무엇을 볼까:</b> {what_to_see}</div>'
+                    f'<div style="font-size:12px;color:#4b7772;">'
+                    f'<b style="color:#0d9488;">연결:</b> {connects_to}</div>'
+                    f'</div>',
+                    unsafe_allow_html=True,
+                )
 
     st.markdown("")
-    if st.button("학습 자료 추천받기", type="primary", use_container_width=True):
+    if st.button("다음 단계", type="primary", use_container_width=True, key="s4_next"):
         st.session_state.current_step = 5
         st.rerun()
-
-
-def _render_roadmap(roadmap: list):
-    items = []
-    for i, step in enumerate(roadmap):
-        title = step.get("step_title") or step.get("goal", f"단계 {i+1}")
-        goal = step.get("goal", "")
-        duration = step.get("estimated_hours", step.get("duration", ""))
-        activities = step.get("activities", [])
-        prereq = step.get("prerequisite", "")
-        is_last = i == len(roadmap) - 1
-
-        connector = "" if is_last else '<div class="roadmap-connector"></div>'
-        act_html = "".join(f'<li style="font-size:13px;color:#6b7280;margin-bottom:2px;">{a}</li>' for a in activities)
-        acts = f'<ul style="margin:6px 0 0 0;padding-left:18px;">{act_html}</ul>' if activities else ""
-        pre_html = (
-            f'<div style="font-size:11px;color:#9ca3af;margin-top:4px;">사전 지식: {prereq}</div>'
-            if prereq and prereq != "없음" else ""
-        )
-
-        items.append(
-            f'<div class="roadmap-item">'
-            f'  <div class="roadmap-line">'
-            f'    <div class="roadmap-dot">{i+1}</div>'
-            f'    {connector}'
-            f'  </div>'
-            f'  <div class="roadmap-content">'
-            f'    <div class="roadmap-goal">{title}</div>'
-            f'    <div class="roadmap-meta">{goal}'
-            f'      {"&nbsp;·&nbsp;<strong>" + duration + "</strong>" if duration else ""}'
-            f'    </div>'
-            f'    {pre_html}'
-            f'    {acts}'
-            f'  </div>'
-            f'</div>'
-        )
-
-    st.markdown("".join(items), unsafe_allow_html=True)

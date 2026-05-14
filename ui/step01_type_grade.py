@@ -1,70 +1,108 @@
 import streamlit as st
-from config.learning_types import get_all_types
+from core.step01_keyword import build_prompt
+from utils.ai_runner import prompt_panel, reset_result, is_done
 
 
 def render():
-    st.markdown('<div class="section-header">학습 유형 선택</div>', unsafe_allow_html=True)
-    st.markdown('<div class="section-subheader">유형을 클릭해서 선택하세요</div>', unsafe_allow_html=True)
+    st.markdown('<div class="section-header">관심사 구체화</div>', unsafe_allow_html=True)
+    st.markdown('<div class="section-subheader">탐구하고 싶은 키워드를 자유롭게 입력하세요.</div>', unsafe_allow_html=True)
 
-    types = get_all_types()
-    current = st.session_state.get("learning_type", "hana")
+    keyword = st.text_input(
+        "관심 키워드",
+        value=st.session_state.get("keyword", ""),
+        placeholder="예: AI, 기후변화, 최저임금, 블랙홀...",
+        label_visibility="collapsed",
+    )
 
-    for tid, info in types.items():
-        c = info["color"]
-        is_sel = tid == current
+    # 키워드 바뀌면 분석 초기화
+    if keyword.strip() != st.session_state.get("keyword", ""):
+        st.session_state.keyword = keyword.strip()
+        reset_result("s1_result")
+        st.session_state.student_context = ""
+        st.rerun()
 
-        # 버튼을 카드처럼 보이게 하는 CSS — 마커 바로 다음 버튼만 타겟
+    if not keyword.strip():
         st.markdown(
-            f"<style>"
-            f".element-container:has(#tm-{tid}) + .element-container button{{"
-            f"  border-left:5px solid {c} !important;"
-            f"  border-radius:0 10px 10px 0 !important;"
-            f"  white-space:pre-line !important;"
-            f"  text-align:left !important;"
-            f"  height:auto !important;"
-            f"  min-height:88px !important;"
-            f"  padding:14px 18px !important;"
-            f"  line-height:1.6 !important;"
-            f"  font-size:14px !important;"
-            f"  font-weight:400 !important;"
-            f"}}"
-            f".element-container:has(#tm-{tid}) + .element-container button b{{"
-            f"  font-size:15px !important;"
-            f"  font-weight:700 !important;"
-            f"}}"
-            f"</style>"
-            f'<span id="tm-{tid}"></span>',
+            '<div style="background:#f0faf8;border:1px solid #c9e6e1;border-radius:10px;'
+            'padding:14px 18px;font-size:13px;color:#4b7772;margin-top:8px;">'
+            '키워드를 입력하면 AI가 구체성을 분석하고 탐구 방향을 찾아드려요.</div>',
             unsafe_allow_html=True,
         )
+        return
 
-        # 버튼 라벨: 이름(굵게) + 핵심 / 줄바꿈 / 설명
-        label = f"{info['name']}  ·  {info['core']}\n{info['description']}"
-        if st.button(
-            label,
-            key=f"type_{tid}",
-            use_container_width=True,
-            type="primary" if is_sel else "secondary",
-        ):
-            st.session_state.learning_type = tid
+    st.markdown("---")
+
+    col_reset, _ = st.columns([1, 4])
+    with col_reset:
+        if st.button("다시 분석", key="reset_s1", use_container_width=True):
+            reset_result("s1_result")
+            st.session_state.student_context = ""
             st.rerun()
 
-        st.markdown('<div style="height:4px;"></div>', unsafe_allow_html=True)
+    system, prompt_text = build_prompt(keyword.strip())
+    if not prompt_panel(system, prompt_text, "s1_result",
+                        spinner_text="AI가 키워드를 분석하고 있어요...",
+                        btn_label="AI 분석 시작"):
+        return
 
-    st.divider()
+    result = st.session_state.get("s1_result")
+    if not result:
+        return
 
-    info = types[current]
-    c = info["color"]
-    st.markdown(f"**{info['name']} 평가 기준**")
-    for cr in info["evaluation_criteria"]:
+    _render_result(result)
+
+
+def _render_result(result: dict):
+    level = result.get("specificity_level", "")
+    reason = result.get("reason", "")
+    question = result.get("clarifying_question")
+
+    level_cfg = {
+        "broad":    ("#fee2e2", "#991b1b", "모호함"),
+        "medium":   ("#fef3c7", "#92400e", "중간"),
+        "specific": ("#d1fae5", "#065f46", "구체적"),
+    }
+    bg, text, label = level_cfg.get(level, ("#f0faf8", "#0d9488", level))
+
+    st.markdown("**AI 분석 결과**")
+    st.markdown(
+        f'<div style="display:flex;gap:10px;align-items:center;margin-bottom:10px;">'
+        f'<div style="background:{bg};color:{text};border-radius:8px;padding:6px 14px;'
+        f'font-size:13px;font-weight:700;">{label}</div>'
+        f'<div style="font-size:13px;color:#374151;">{reason}</div></div>',
+        unsafe_allow_html=True,
+    )
+
+    if level in ("broad", "medium") and question:
         st.markdown(
-            f'<div style="display:flex;justify-content:space-between;padding:10px 14px;'
-            f'background:#f0faf8;border-radius:8px;margin-bottom:6px;border:1px solid #c9e6e1;">'
-            f'<span style="font-size:13px;color:#374151;">{cr["label"]}</span>'
-            f'<span style="font-size:12px;font-weight:700;color:#0d9488;">{cr["weight"]}점</span></div>',
+            f'<div style="background:#f0faf8;border-left:4px solid #0d9488;border-radius:0 8px 8px 0;'
+            f'padding:14px 16px;font-size:14px;color:#0a5c52;font-weight:600;margin:12px 0;">'
+            f'{question}</div>',
             unsafe_allow_html=True,
         )
 
+        context = st.text_area(
+            "내 생각",
+            value=st.session_state.get("student_context", ""),
+            placeholder="떠오른 장면, 경험, 구체적인 상황을 자유롭게 적어주세요.",
+            height=100,
+            label_visibility="collapsed",
+        )
+        if context.strip() != st.session_state.get("student_context", ""):
+            st.session_state.student_context = context.strip()
+
+        if not st.session_state.get("student_context", "").strip():
+            st.markdown(
+                '<div style="font-size:12px;color:#4b7772;margin-top:4px;">'
+                '위 질문에 답을 적으면 더 정확한 주제 추천을 받을 수 있어요.</div>',
+                unsafe_allow_html=True,
+            )
+            return
+
+    else:
+        st.session_state.student_context = ""
+
     st.markdown("")
-    if st.button("다음 단계", type="primary", use_container_width=True):
+    if st.button("다음 단계", type="primary", use_container_width=True, key="s1_next"):
         st.session_state.current_step = 2
         st.rerun()

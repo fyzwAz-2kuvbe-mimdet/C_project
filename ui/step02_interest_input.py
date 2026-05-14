@@ -1,172 +1,113 @@
 import streamlit as st
-from core.step02_initial_analysis import build_prompt
-from utils.ai_runner import prompt_panel
-
-_PLACEHOLDERS = {
-    "초": "예: 공룡이 왜 멸종했는지, 로봇이 움직이는 방법...",
-    "중": "예: 인공지능의 원리, 환경 문제와 경제 성장...",
-    "고": "예: 양자컴퓨팅 큐비트 원리, 빅데이터와 직업윤리...",
-}
+from core.step02_topics import build_prompt
+from utils.ai_runner import prompt_panel, reset_result
 
 
 def render():
-    if st.button("← 이전"):
+    if st.button("← 이전", key="s2_back"):
         st.session_state.current_step = 1
         st.rerun()
 
-    st.markdown('<div class="section-header">관심 주제 입력</div>', unsafe_allow_html=True)
+    st.markdown('<div class="section-header">탐구 주제 추천</div>', unsafe_allow_html=True)
 
-    has_text = bool(st.session_state.get("interest_text", ""))
-    is_open = st.session_state.get("interest_input_open", False) or has_text
-
-    if not is_open:
-        _render_trigger()
-        return
-
-    _render_input()
-
-
-def _render_trigger():
-    # CSS: 트리거 마커 다음 버튼을 큰 청록 카드처럼 스타일링
-    st.markdown("""
-<style>
-.element-container:has(#interest-trigger) + .element-container button {
-  background: #0d9488 !important;
-  border: 0 !important;
-  border-radius: 16px !important;
-  min-height: 130px !important;
-  font-size: 22px !important;
-  font-weight: 800 !important;
-  color: #fff !important;
-  letter-spacing: -0.02em !important;
-  box-shadow: 0 6px 24px rgba(13,148,136,.25) !important;
-  transition: background .2s, box-shadow .2s, transform .15s !important;
-}
-.element-container:has(#interest-trigger) + .element-container button:hover {
-  background: #0f766e !important;
-  box-shadow: 0 8px 28px rgba(13,148,136,.35) !important;
-  transform: translateY(-2px) !important;
-}
-</style>
-<span id="interest-trigger"></span>
-""", unsafe_allow_html=True)
-
-    if st.button("관심 주제 설정", key="open_interest", use_container_width=True):
-        st.session_state.interest_input_open = True
-        st.rerun()
+    keyword = st.session_state.get("keyword", "")
+    student_context = st.session_state.get("student_context", "")
 
     st.markdown(
-        '<div style="text-align:center;font-size:13px;color:#4b7772;margin-top:10px;">'
-        '궁금한 주제를 자유롭게 입력하세요. 키워드 하나도 괜찮아요.</div>',
+        f'<div style="background:#f0faf8;border:1px solid #c9e6e1;border-radius:10px;'
+        f'padding:10px 14px;font-size:13px;color:#374151;margin-bottom:12px;">'
+        f'<span style="color:#0d9488;font-weight:700;">키워드:</span> {keyword}'
+        f'{"  |  " + student_context if student_context else ""}</div>',
         unsafe_allow_html=True,
     )
 
+    col_reset, _ = st.columns([1, 4])
+    with col_reset:
+        if st.button("다시 추천", key="reset_s2", use_container_width=True):
+            reset_result("s2_topics")
+            st.session_state.selected_topic = None
+            st.rerun()
 
-def _render_input():
-    grade = st.session_state.get("grade", "고1")
-    placeholder = _PLACEHOLDERS.get(grade[:1], _PLACEHOLDERS["고"])
+    system, prompt_text = build_prompt(keyword, student_context)
+    if not prompt_panel(system, prompt_text, "s2_topics",
+                        spinner_text="AI가 탐구 주제를 추천하고 있어요...",
+                        btn_label="주제 추천 받기"):
+        return
 
-    st.markdown('<div class="section-subheader">궁금한 주제를 자유롭게 적어주세요. 키워드 하나도 괜찮아요.</div>', unsafe_allow_html=True)
+    topics_data = st.session_state.get("s2_topics") or {}
+    topics = topics_data.get("topics", [])
+    if not topics:
+        st.warning("추천 주제를 불러오지 못했습니다. 다시 시도해주세요.")
+        return
 
-    interest = st.text_area(
-        "관심 주제",
-        value=st.session_state.get("interest_text", ""),
-        placeholder=placeholder,
-        height=120,
-        label_visibility="collapsed",
+    st.markdown("**추천 주제 목록** — 클릭해서 탐구할 주제를 선택하세요")
+
+    selected = st.session_state.get("selected_topic")
+    sel_name = (selected or {}).get("name", "")
+
+    for i, topic in enumerate(topics):
+        name = topic.get("name", "")
+        hook = topic.get("hook", "")
+        insight = topic.get("insight", "")
+        real_use = topic.get("real_use", "")
+        is_sel = name == sel_name
+
+        # CSS marker for button targeting
+        st.markdown(
+            f"<style>"
+            f".element-container:has(#tm-topic-{i}) + .element-container button{{"
+            f"  border-left:5px solid #0d9488 !important;"
+            f"  border-radius:0 10px 10px 0 !important;"
+            f"  white-space:pre-line !important;"
+            f"  text-align:left !important;"
+            f"  height:auto !important;"
+            f"  min-height:100px !important;"
+            f"  padding:14px 18px !important;"
+            f"  line-height:1.6 !important;"
+            f"  font-size:13px !important;"
+            f"  font-weight:400 !important;"
+            f"}}"
+            f"</style>"
+            f'<span id="tm-topic-{i}"></span>',
+            unsafe_allow_html=True,
+        )
+        label = f"{name}\n{hook}\n{insight}"
+        if real_use:
+            label += f"\n실생활: {real_use}"
+
+        if st.button(label, key=f"topic_btn_{i}", use_container_width=True,
+                     type="primary" if is_sel else "secondary"):
+            st.session_state.selected_topic = topic
+            # reset downstream
+            reset_result("s3_roadmap")
+            reset_result("s4_resources")
+            reset_result("s5_trends")
+            reset_result("s6_reflection")
+            reset_result("s7_abstract")
+            reset_result("s8_feedback")
+            reset_result("s9_r1")
+            reset_result("s9_r2")
+            reset_result("s9_r3")
+            reset_result("s10_result")
+            st.rerun()
+
+        st.markdown('<div style="height:4px;"></div>', unsafe_allow_html=True)
+
+    if not sel_name:
+        st.markdown(
+            '<div style="font-size:12px;color:#4b7772;margin-top:8px;">'
+            '주제를 선택하면 다음 단계로 진행할 수 있어요.</div>',
+            unsafe_allow_html=True,
+        )
+        return
+
+    st.markdown(
+        f'<div style="background:#e8f5f3;border:1px solid #0d9488;border-radius:10px;'
+        f'padding:10px 14px;font-size:13px;color:#0a5c52;font-weight:700;margin:8px 0;">'
+        f'선택된 주제: {sel_name}</div>',
+        unsafe_allow_html=True,
     )
 
-    col1, col2 = st.columns([4, 1])
-    with col2:
-        if st.button("초기화", use_container_width=True):
-            st.session_state.interest_text = ""
-            st.session_state.initial_analysis = None
-            st.session_state.step2_confirmed = False
-            st.rerun()
-
-    if interest.strip() and interest.strip() != st.session_state.get("interest_text", ""):
-        st.session_state.interest_text = interest.strip()
-        st.session_state.initial_analysis = None
-
-    if not interest.strip():
-        st.markdown(
-            '<div style="background:#f0faf8;border:1px solid #c9e6e1;border-radius:10px;'
-            'padding:14px 18px;font-size:13px;color:#4b7772;margin-top:8px;">'
-            '관심 주제를 입력하면 AI 분석을 시작할 수 있어요.</div>',
-            unsafe_allow_html=True,
-        )
-        return
-
-    st.session_state.interest_text = interest.strip()
-    st.markdown("---")
-    st.markdown("**AI 분석**")
-
-    lt = st.session_state.get("learning_type", "hana")
-    system, prompt = build_prompt(interest.strip(), grade, lt)
-
-    if not prompt_panel(system, prompt, "initial_analysis",
-                        spinner_text="AI가 관심사를 분석하고 있어요...",
-                        btn_label="AI 분석 시작"):
-        return
-
-    analysis = st.session_state.get("initial_analysis")
-    if analysis:
-        _render_analysis(analysis)
-
-
-def _render_analysis(analysis: dict):
-    subtopic = analysis.get("estimated_subtopic", "")
-    depth = analysis.get("depth_level", "")
-    rationale = analysis.get("rationale", "")
-
-    depth_colors = {
-        "초급": ("#d1fae5", "#065f46"),
-        "중급": ("#fef3c7", "#92400e"),
-        "고급": ("#ede9fe", "#5b21b6"),
-    }
-    bg, text = depth_colors.get(depth, ("#f0faf8", "#0d9488"))
-
-    st.markdown("**AI 분석 결과**")
-    col1, col2 = st.columns(2)
-    with col1:
-        st.markdown(
-            f'<div style="background:#f0faf8;border:1px solid #c9e6e1;border-radius:10px;padding:14px;">'
-            f'<div style="font-size:11px;font-weight:700;color:#0d9488;margin-bottom:4px;">추정 세부 주제</div>'
-            f'<div style="font-size:16px;font-weight:700;color:#0a5c52;">{subtopic}</div></div>',
-            unsafe_allow_html=True,
-        )
-    with col2:
-        st.markdown(
-            f'<div style="background:{bg};border-radius:10px;padding:14px;">'
-            f'<div style="font-size:11px;font-weight:700;color:{text};margin-bottom:4px;">학습 깊이</div>'
-            f'<div style="font-size:16px;font-weight:700;color:{text};">{depth}</div></div>',
-            unsafe_allow_html=True,
-        )
-    if rationale:
-        st.markdown(
-            f'<div style="background:#f0faf8;border-left:3px solid #0d9488;border-radius:0 8px 8px 0;'
-            f'padding:12px 14px;font-size:13px;color:#374151;margin-top:10px;">{rationale}</div>',
-            unsafe_allow_html=True,
-        )
-
-    st.markdown("")
-    col_yes, col_no = st.columns(2)
-    with col_yes:
-        if st.button("맞아요, 다음으로", type="primary", use_container_width=True):
-            st.session_state.step2_confirmed = True
-            st.session_state.current_step = 3
-            for k in ["follow_up_questions", "user_answers", "q3_idx", "refined_topic",
-                      "roadmap", "resources", "news_items", "extra_resources",
-                      "news_summaries", "core_questions", "question_answers",
-                      "q7_idx", "student_text", "feedback", "next_step_result"]:
-                if k in ("user_answers", "news_summaries", "question_answers"):
-                    st.session_state[k] = {}
-                elif k in ("q3_idx", "q7_idx"):
-                    st.session_state[k] = 0
-                else:
-                    st.session_state[k] = None
-            st.rerun()
-    with col_no:
-        if st.button("수정할게요", use_container_width=True):
-            st.session_state.initial_analysis = None
-            st.rerun()
+    if st.button("다음 단계", type="primary", use_container_width=True, key="s2_next"):
+        st.session_state.current_step = 3
+        st.rerun()
