@@ -4,7 +4,7 @@ from config.learning_types import get_all_types
 
 def render():
     st.markdown('<div class="section-header">학습 유형 선택</div>', unsafe_allow_html=True)
-    st.markdown('<div class="section-subheader">나에게 맞는 유형을 선택하면 맞춤 멘토링이 시작됩니다</div>', unsafe_allow_html=True)
+    st.markdown('<div class="section-subheader">유형을 선택하면 상세 내용이 표시됩니다</div>', unsafe_allow_html=True)
 
     types = get_all_types()
     current = st.session_state.get("learning_type", "hana")
@@ -12,32 +12,43 @@ def render():
     for tid, info in types.items():
         c = info["color"]
         is_sel = tid == current
-        border_color = "#0d9488" if is_sel else "#c9e6e1"
-        bg = "#f0faf8" if is_sel else "#fff"
-        shadow = "0 0 0 3px rgba(13,148,136,.15)" if is_sel else "0 2px 6px rgba(13,148,136,.04)"
 
-        col_card, col_btn = st.columns([5, 1])
-        with col_card:
+        # CSS: 각 타입 버튼에 유형 색상 왼쪽 테두리 적용 (has() 셀렉터)
+        st.markdown(
+            f'<style>'
+            f'.element-container:has(#type-marker-{tid}) + .element-container button'
+            f'{{ border-left: 5px solid {c} !important;'
+            f'   border-radius: 0 8px 8px 0 !important;'
+            f'   text-align: left !important;'
+            f'   height: 48px !important;'
+            f'   padding-left: 16px !important; }}'
+            f'</style>'
+            f'<span id="type-marker-{tid}"></span>',
+            unsafe_allow_html=True,
+        )
+
+        if st.button(
+            info["name"],
+            key=f"type_{tid}",
+            use_container_width=True,
+            type="primary" if is_sel else "secondary",
+        ):
+            st.session_state.learning_type = tid
+            st.rerun()
+
+        if is_sel:
             st.markdown(
-                f'<div style="background:{bg};border:1.5px solid {border_color};border-left:5px solid {c};'
-                f'border-radius:0 12px 12px 0;padding:16px 18px;box-shadow:{shadow};">'
-                f'<div style="font-size:15px;font-weight:700;color:#111827;margin-bottom:3px;">{info["name"]}</div>'
-                f'<div style="font-size:12px;color:#6b7280;margin-bottom:6px;">{info["description"]}</div>'
+                f'<div style="background:#f0faf8;'
+                f'border:1px solid #c9e6e1;border-top:none;border-left:5px solid {c};'
+                f'border-radius:0 0 10px 0;padding:14px 18px;margin-top:-6px;margin-bottom:12px;">'
+                f'<div style="font-size:13px;color:#374151;line-height:1.7;margin-bottom:8px;">'
+                f'{info["description"]}</div>'
                 f'<div style="font-size:11px;font-weight:700;color:{c};">{info["core"]}</div>'
                 f'</div>',
                 unsafe_allow_html=True,
             )
-        with col_btn:
-            st.markdown('<div style="height:16px;"></div>', unsafe_allow_html=True)
-            if st.button(
-                "선택됨" if is_sel else "선택",
-                key=f"type_{tid}",
-                use_container_width=True,
-                type="primary" if is_sel else "secondary",
-            ):
-                st.session_state.learning_type = tid
-                st.rerun()
-        st.markdown('<div style="height:4px;"></div>', unsafe_allow_html=True)
+        else:
+            st.markdown('<div style="height:6px;"></div>', unsafe_allow_html=True)
 
     st.divider()
 

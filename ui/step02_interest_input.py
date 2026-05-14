@@ -15,10 +15,59 @@ def render():
         st.rerun()
 
     st.markdown('<div class="section-header">관심 주제 입력</div>', unsafe_allow_html=True)
-    st.markdown('<div class="section-subheader">궁금한 주제를 자유롭게 적어주세요. 키워드 하나도 괜찮아요.</div>', unsafe_allow_html=True)
 
+    has_text = bool(st.session_state.get("interest_text", ""))
+    is_open = st.session_state.get("interest_input_open", False) or has_text
+
+    if not is_open:
+        _render_trigger()
+        return
+
+    _render_input()
+
+
+def _render_trigger():
+    # CSS: 트리거 마커 다음 버튼을 큰 청록 카드처럼 스타일링
+    st.markdown("""
+<style>
+.element-container:has(#interest-trigger) + .element-container button {
+  background: #0d9488 !important;
+  border: 0 !important;
+  border-radius: 16px !important;
+  min-height: 130px !important;
+  font-size: 22px !important;
+  font-weight: 800 !important;
+  color: #fff !important;
+  letter-spacing: -0.02em !important;
+  box-shadow: 0 6px 24px rgba(13,148,136,.25) !important;
+  transition: background .2s, box-shadow .2s, transform .15s !important;
+}
+.element-container:has(#interest-trigger) + .element-container button:hover {
+  background: #0f766e !important;
+  box-shadow: 0 8px 28px rgba(13,148,136,.35) !important;
+  transform: translateY(-2px) !important;
+}
+</style>
+<span id="interest-trigger"></span>
+""", unsafe_allow_html=True)
+
+    if st.button("관심 주제 설정", key="open_interest", use_container_width=True):
+        st.session_state.interest_input_open = True
+        st.rerun()
+
+    st.markdown(
+        '<div style="text-align:center;font-size:13px;color:#4b7772;margin-top:10px;">'
+        '궁금한 주제를 자유롭게 입력하세요. 키워드 하나도 괜찮아요.</div>',
+        unsafe_allow_html=True,
+    )
+
+
+def _render_input():
     grade = st.session_state.get("grade", "고1")
     placeholder = _PLACEHOLDERS.get(grade[:1], _PLACEHOLDERS["고"])
+
+    st.markdown('<div class="section-subheader">궁금한 주제를 자유롭게 적어주세요. 키워드 하나도 괜찮아요.</div>', unsafe_allow_html=True)
+
     interest = st.text_area(
         "관심 주제",
         value=st.session_state.get("interest_text", ""),
