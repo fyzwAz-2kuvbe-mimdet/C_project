@@ -86,12 +86,11 @@ def _render_type_selector():
     for tid in _TYPE_ORDER:
         t = all_types[tid]
         is_sel = tid == current
-        color = t["color"]
 
         st.markdown(
             f"<style>"
             f".element-container:has(#type-{tid}) + .element-container button{{"
-            f"  border-left:5px solid {color} !important;"
+            f"  border-left:5px solid #0d9488 !important;"
             f"  border-radius:0 8px 8px 0 !important;"
             f"  white-space:pre-line !important;"
             f"  text-align:left !important;"
