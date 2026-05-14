@@ -79,6 +79,7 @@ def render():
         st.session_state.get("s6_what_i_studied", ""),
         st.session_state.get("s6_most_interesting", ""),
         st.session_state.get("s6_stuck_points", ""),
+        learning_type=st.session_state.get("learning_type", "hana"),
     )
     if not prompt_panel(system, prompt_text, "s6_reflection",
                         spinner_text="AI가 회고를 분석하고 있어요...",

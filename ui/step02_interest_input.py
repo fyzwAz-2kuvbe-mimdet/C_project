@@ -28,7 +28,7 @@ def render():
             st.session_state.selected_topic = None
             st.rerun()
 
-    system, prompt_text = build_prompt(keyword, student_context)
+    system, prompt_text = build_prompt(keyword, student_context, learning_type=st.session_state.get("learning_type", "hana"))
     if not prompt_panel(system, prompt_text, "s2_topics",
                         spinner_text="AI가 탐구 주제를 추천하고 있어요...",
                         btn_label="주제 추천 받기"):

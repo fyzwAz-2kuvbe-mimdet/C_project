@@ -56,7 +56,8 @@ def render():
 
     system, prompt_text = build_prompt(topic,
                                        st.session_state.get("curiosity", ""),
-                                       st.session_state.get("current_level", ""))
+                                       st.session_state.get("current_level", ""),
+                                       learning_type=st.session_state.get("learning_type", "hana"))
     if not prompt_panel(system, prompt_text, "s3_roadmap",
                         spinner_text="AI가 학습 로드맵을 설계하고 있어요...",
                         btn_label="로드맵 생성"):

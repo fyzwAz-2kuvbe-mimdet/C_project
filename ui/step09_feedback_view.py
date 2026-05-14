@@ -81,12 +81,14 @@ def render():
             _reset_all_rounds()
             st.rerun()
 
+    _ltype = st.session_state.get("learning_type", "hana")
     sys1, p1 = build_r1_prompt(
         topic,
         st.session_state.get("s9_study_summary", ""),
         st.session_state.get("s9_most_interesting", ""),
         st.session_state.get("s9_stuck_points", ""),
         final_abstract,
+        learning_type=_ltype,
     )
     if not prompt_panel(sys1, p1, "s9_r1",
                         spinner_text="AI가 개념을 추출하고 있어요...",
@@ -148,6 +150,7 @@ def render():
         final_abstract,
         r1,
         st.session_state.get("s9_student_r1", ""),
+        learning_type=_ltype,
     )
     if not prompt_panel(sys2, p2, "s9_r2",
                         spinner_text="AI가 지식 지도 구조를 설계하고 있어요...",
@@ -209,6 +212,7 @@ def render():
         st.session_state.get("s9_student_r1", ""),
         r2,
         st.session_state.get("s9_student_r2", ""),
+        learning_type=_ltype,
     )
     if not prompt_panel(sys3, p3, "s9_r3",
                         spinner_text="AI가 최종 지식 지도를 완성하고 있어요...",

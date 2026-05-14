@@ -3,6 +3,7 @@ import streamlit as st
 _DEFAULTS = {
     "current_step": 1,
     "grade": "고1",
+    "learning_type": "hana",
     # step 1: keyword analysis
     "keyword": "",
     "s1_result": None,

@@ -1,4 +1,5 @@
 import streamlit as st
+from config.learning_types import get_all_types
 
 _GRADES = ["초4", "초5", "초6", "중1", "중2", "중3", "고1", "고2", "고3"]
 _STEP_NAMES = {
@@ -12,6 +13,7 @@ _PHASES = [
     ("Phase 3", "#059669", [6, 7, 8]),
     ("Phase 4", "#0a5c52", [9, 10]),
 ]
+_TYPE_ORDER = ["hana", "sciencehigh", "minsa", "foreign"]
 
 
 def render_sidebar():
@@ -20,6 +22,10 @@ def render_sidebar():
         "<div style='font-size:12px;color:#4b7772;margin-bottom:12px;'>10단계 탐구 멘토링</div>",
         unsafe_allow_html=True,
     )
+    st.divider()
+
+    # ── 학습 유형 선택 ──
+    _render_type_selector()
     st.divider()
 
     # ── 학년 ──
@@ -70,6 +76,47 @@ def render_sidebar():
             from utils.session import reset_all
             reset_all()
             st.rerun()
+
+
+def _render_type_selector():
+    all_types = get_all_types()
+    current = st.session_state.get("learning_type", "hana")
+
+    st.markdown("**목표 유형**")
+    cols = st.columns(2)
+    for idx, tid in enumerate(_TYPE_ORDER):
+        t = all_types[tid]
+        is_sel = tid == current
+        border = f"2px solid {t['color']}" if is_sel else "1px solid #e5e7eb"
+        bg = f"{t['color']}18" if is_sel else "#fff"
+        with cols[idx % 2]:
+            st.markdown(
+                f'<div style="background:{bg};border:{border};border-radius:8px;'
+                f'padding:8px 10px;margin-bottom:6px;cursor:pointer;">'
+                f'<div style="font-size:13px;font-weight:700;color:{t["color"]};">'
+                f'{t["icon"]} {t["name"]}</div>'
+                f'<div style="font-size:10px;color:#6b7280;margin-top:2px;">{t["core"]}</div>'
+                f'</div>',
+                unsafe_allow_html=True,
+            )
+            if st.button(
+                "선택됨" if is_sel else "선택",
+                key=f"_type_{tid}",
+                type="primary" if is_sel else "secondary",
+                use_container_width=True,
+            ):
+                if tid != current:
+                    st.session_state.learning_type = tid
+                    st.rerun()
+
+    # 선택된 유형 설명 카드
+    sel = all_types[current]
+    st.markdown(
+        f'<div style="background:{sel["color"]}12;border:1px solid {sel["color"]}44;'
+        f'border-radius:8px;padding:8px 10px;margin-top:4px;font-size:11px;color:#374151;">'
+        f'{sel["description"]}</div>',
+        unsafe_allow_html=True,
+    )
 
 
 def _render_phase_labels():

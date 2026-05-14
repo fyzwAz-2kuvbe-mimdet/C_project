@@ -92,6 +92,7 @@ def render():
         st.session_state.get("s7_motivation", ""),
         st.session_state.get("s7_key_findings", ""),
         st.session_state.get("s7_limits_and_next", ""),
+        learning_type=st.session_state.get("learning_type", "hana"),
     )
     if not prompt_panel(system, prompt_text, "s7_abstract",
                         spinner_text="AI가 초록을 작성하고 있어요...",

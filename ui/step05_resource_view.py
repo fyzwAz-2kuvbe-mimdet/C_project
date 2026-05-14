@@ -30,7 +30,7 @@ def render():
             st.rerun()
 
     current_level = st.session_state.get("current_level", "")
-    system, prompt_text = build_prompt(topic, current_level)
+    system, prompt_text = build_prompt(topic, current_level, learning_type=st.session_state.get("learning_type", "hana"))
     if not prompt_panel(system, prompt_text, "s5_trends",
                         spinner_text="AI가 최신 트렌드를 분석하고 있어요...",
                         btn_label="트렌드 분석 시작"):

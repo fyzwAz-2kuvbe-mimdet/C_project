@@ -1,7 +1,7 @@
 import json
-from prompts.mentoring_prompts import STEP01_KEYWORD, SYSTEM_COACH
+from prompts.mentoring_prompts import STEP01_KEYWORD, get_system_prompt
 
 
-def build_prompt(keyword: str) -> tuple:
+def build_prompt(keyword: str, learning_type: str = "hana") -> tuple:
     user = STEP01_KEYWORD.format(keyword=keyword)
-    return SYSTEM_COACH, user
+    return get_system_prompt(learning_type), user

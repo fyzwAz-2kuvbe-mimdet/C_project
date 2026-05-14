@@ -68,6 +68,7 @@ def render():
         topic,
         st.session_state.get("student_draft", ""),
         ai_abstract,
+        learning_type=st.session_state.get("learning_type", "hana"),
     )
     if not prompt_panel(system, prompt_text, "s8_feedback",
                         spinner_text="AI가 글을 첨삭하고 있어요...",

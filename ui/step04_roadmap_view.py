@@ -32,7 +32,7 @@ def render():
             reset_result("s4_resources")
             st.rerun()
 
-    system, prompt_text = build_prompt(topic, roadmap)
+    system, prompt_text = build_prompt(topic, roadmap, learning_type=st.session_state.get("learning_type", "hana"))
     if not prompt_panel(system, prompt_text, "s4_resources",
                         spinner_text="AI가 자료 탐색 경로를 안내하고 있어요...",
                         btn_label="자료 탐색 경로 안내받기"):

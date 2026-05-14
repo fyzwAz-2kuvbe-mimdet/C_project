@@ -84,6 +84,7 @@ def render():
         st.session_state.get("s10_my_idea", ""),
         selected_seed,
         st.session_state.get("s10_current_subjects", ""),
+        learning_type=st.session_state.get("learning_type", "hana"),
     )
     if not prompt_panel(system, prompt_text, "s10_result",
                         spinner_text="AI가 교과 연결을 분석하고 있어요...",

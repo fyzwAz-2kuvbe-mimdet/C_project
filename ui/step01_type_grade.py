@@ -39,7 +39,7 @@ def render():
             st.session_state.student_context = ""
             st.rerun()
 
-    system, prompt_text = build_prompt(keyword.strip())
+    system, prompt_text = build_prompt(keyword.strip(), learning_type=st.session_state.get("learning_type", "hana"))
     if not prompt_panel(system, prompt_text, "s1_result",
                         spinner_text="AI가 키워드를 분석하고 있어요...",
                         btn_label="AI 분석 시작"):
