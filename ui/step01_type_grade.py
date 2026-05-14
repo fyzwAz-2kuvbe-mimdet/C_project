@@ -4,7 +4,7 @@ from config.learning_types import get_all_types
 
 def render():
     st.markdown('<div class="section-header">학습 유형 선택</div>', unsafe_allow_html=True)
-    st.markdown('<div class="section-subheader">유형을 선택하면 상세 내용이 표시됩니다</div>', unsafe_allow_html=True)
+    st.markdown('<div class="section-subheader">유형을 클릭해서 선택하세요</div>', unsafe_allow_html=True)
 
     types = get_all_types()
     current = st.session_state.get("learning_type", "hana")
@@ -13,22 +13,34 @@ def render():
         c = info["color"]
         is_sel = tid == current
 
-        # CSS: 각 타입 버튼에 유형 색상 왼쪽 테두리 적용 (has() 셀렉터)
+        # 버튼을 카드처럼 보이게 하는 CSS — 마커 바로 다음 버튼만 타겟
         st.markdown(
-            f'<style>'
-            f'.element-container:has(#type-marker-{tid}) + .element-container button'
-            f'{{ border-left: 5px solid {c} !important;'
-            f'   border-radius: 0 8px 8px 0 !important;'
-            f'   text-align: left !important;'
-            f'   height: 48px !important;'
-            f'   padding-left: 16px !important; }}'
-            f'</style>'
-            f'<span id="type-marker-{tid}"></span>',
+            f"<style>"
+            f".element-container:has(#tm-{tid}) + .element-container button{{"
+            f"  border-left:5px solid {c} !important;"
+            f"  border-radius:0 10px 10px 0 !important;"
+            f"  white-space:pre-line !important;"
+            f"  text-align:left !important;"
+            f"  height:auto !important;"
+            f"  min-height:88px !important;"
+            f"  padding:14px 18px !important;"
+            f"  line-height:1.6 !important;"
+            f"  font-size:14px !important;"
+            f"  font-weight:400 !important;"
+            f"}}"
+            f".element-container:has(#tm-{tid}) + .element-container button b{{"
+            f"  font-size:15px !important;"
+            f"  font-weight:700 !important;"
+            f"}}"
+            f"</style>"
+            f'<span id="tm-{tid}"></span>',
             unsafe_allow_html=True,
         )
 
+        # 버튼 라벨: 이름(굵게) + 핵심 / 줄바꿈 / 설명
+        label = f"{info['name']}  ·  {info['core']}\n{info['description']}"
         if st.button(
-            info["name"],
+            label,
             key=f"type_{tid}",
             use_container_width=True,
             type="primary" if is_sel else "secondary",
@@ -36,19 +48,7 @@ def render():
             st.session_state.learning_type = tid
             st.rerun()
 
-        if is_sel:
-            st.markdown(
-                f'<div style="background:#f0faf8;'
-                f'border:1px solid #c9e6e1;border-top:none;border-left:5px solid {c};'
-                f'border-radius:0 0 10px 0;padding:14px 18px;margin-top:-6px;margin-bottom:12px;">'
-                f'<div style="font-size:13px;color:#374151;line-height:1.7;margin-bottom:8px;">'
-                f'{info["description"]}</div>'
-                f'<div style="font-size:11px;font-weight:700;color:{c};">{info["core"]}</div>'
-                f'</div>',
-                unsafe_allow_html=True,
-            )
-        else:
-            st.markdown('<div style="height:6px;"></div>', unsafe_allow_html=True)
+        st.markdown('<div style="height:4px;"></div>', unsafe_allow_html=True)
 
     st.divider()
 
