@@ -8,7 +8,7 @@ def render():
         st.session_state.current_step = 3
         st.rerun()
 
-    st.markdown('<div class="section-header">🗺️ 학습 로드맵</div>', unsafe_allow_html=True)
+    st.markdown('<div class="section-header">학습 로드맵</div>', unsafe_allow_html=True)
     st.markdown('<div class="section-subheader">AI가 설계한 단계별 탐구 여정이에요.</div>', unsafe_allow_html=True)
 
     grade = st.session_state.get("grade", "고1")
@@ -20,7 +20,7 @@ def render():
     system, prompt = build_prompt(topic, keywords, grade, lt)
     if not prompt_panel(system, prompt, "roadmap",
                         spinner_text="AI가 학습 로드맵을 설계하고 있어요...",
-                        btn_label="🗺️ 로드맵 생성하기"):
+                        btn_label="로드맵 생성하기"):
         return
 
     roadmap = st.session_state.roadmap
@@ -34,7 +34,7 @@ def render():
     _render_roadmap(roadmap)
 
     st.markdown("")
-    if st.button("📚 학습 자료 추천받기 →", type="primary", use_container_width=True):
+    if st.button("학습 자료 추천받기", type="primary", use_container_width=True):
         st.session_state.current_step = 5
         st.rerun()
 

@@ -12,7 +12,7 @@ def render():
         st.session_state.current_step = 5
         st.rerun()
 
-    st.markdown('<div class="section-header">📰 뉴스·동향</div>', unsafe_allow_html=True)
+    st.markdown('<div class="section-header">뉴스·동향</div>', unsafe_allow_html=True)
     st.markdown('<div class="section-subheader">주제와 관련된 최신 뉴스와 추가 자료예요.</div>', unsafe_allow_html=True)
 
     grade = st.session_state.get("grade", "고1")
@@ -72,7 +72,7 @@ def render():
     _render_extra(topic, grade, lt)
 
     st.markdown("")
-    if st.button("❓ 핵심 질문 보기 →", type="primary", use_container_width=True):
+    if st.button("핵심 질문 보기", type="primary", use_container_width=True):
         st.session_state.current_step = 7
         st.rerun()
 
@@ -110,11 +110,11 @@ def _render_extra(topic: str, grade: str, lt: str):
         desc = item.get("description", "")
         url = item.get("url", "")
         link_html = (
-            f' &nbsp;<a href="{url}" target="_blank" style="font-size:12px;color:#3b82f6;">🔗 바로가기</a>'
+            f' &nbsp;<a href="{url}" target="_blank" style="font-size:12px;color:#0d9488;">바로가기</a>'
             if url and url != "출처 미확인" else ""
         )
         st.markdown(
-            f'<div style="background:#f8fafc;border-radius:8px;padding:12px 14px;margin-bottom:8px;">'
+            f'<div style="background:#fff;border:1px solid #c9e6e1;border-radius:8px;padding:12px 14px;margin-bottom:8px;">'
             f'  <div style="font-size:14px;font-weight:700;color:#111827;">{name}{link_html}</div>'
             f'  {"<div style=\"font-size:13px;color:#6b7280;margin-top:4px;\">" + desc + "</div>" if desc else ""}'
             f'</div>',

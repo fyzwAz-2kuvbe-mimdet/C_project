@@ -9,7 +9,7 @@ def render():
         st.session_state.current_step = 7
         st.rerun()
 
-    st.markdown('<div class="section-header">✍️ 결과물 작성</div>', unsafe_allow_html=True)
+    st.markdown('<div class="section-header">결과물 작성</div>', unsafe_allow_html=True)
     st.markdown('<div class="section-subheader">탐구한 내용을 정리해서 올려주세요. AI가 꼼꼼히 첨삭해줄 거예요.</div>', unsafe_allow_html=True)
 
     fmt = st.selectbox(
@@ -50,7 +50,7 @@ def render():
     char_count = len(student_text.strip())
     st.caption(f"현재 {char_count:,}자 입력됨")
 
-    if st.button("🤖 AI 첨삭 받기 →", type="primary", use_container_width=True, disabled=char_count < 50):
+    if st.button("AI 첨삭 받기", type="primary", use_container_width=True, disabled=char_count < 50):
         if char_count < 50:
             st.warning("최소 50자 이상 작성해주세요.")
         else:

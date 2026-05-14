@@ -14,7 +14,7 @@ def render():
         st.session_state.current_step = 1
         st.rerun()
 
-    st.markdown('<div class="section-header">💡 관심 주제 입력</div>', unsafe_allow_html=True)
+    st.markdown('<div class="section-header">관심 주제 입력</div>', unsafe_allow_html=True)
     st.markdown('<div class="section-subheader">궁금한 주제를 자유롭게 적어주세요. 키워드 하나도 괜찮아요.</div>', unsafe_allow_html=True)
 
     grade = st.session_state.get("grade", "고1")
@@ -40,7 +40,12 @@ def render():
         st.session_state.initial_analysis = None
 
     if not interest.strip():
-        st.info("관심 주제를 입력하면 AI 분석을 시작할 수 있어요.")
+        st.markdown(
+            '<div style="background:#f0faf8;border:1px solid #c9e6e1;border-radius:10px;'
+            'padding:14px 18px;font-size:13px;color:#4b7772;margin-top:8px;">'
+            '관심 주제를 입력하면 AI 분석을 시작할 수 있어요.</div>',
+            unsafe_allow_html=True,
+        )
         return
 
     st.session_state.interest_text = interest.strip()
@@ -52,7 +57,7 @@ def render():
 
     if not prompt_panel(system, prompt, "initial_analysis",
                         spinner_text="AI가 관심사를 분석하고 있어요...",
-                        btn_label="🔍 AI 분석 시작"):
+                        btn_label="AI 분석 시작"):
         return
 
     analysis = st.session_state.get("initial_analysis")
@@ -65,16 +70,20 @@ def _render_analysis(analysis: dict):
     depth = analysis.get("depth_level", "")
     rationale = analysis.get("rationale", "")
 
-    depth_colors = {"초급": ("#d1fae5", "#065f46"), "중급": ("#fef3c7", "#92400e"), "고급": ("#ede9fe", "#5b21b6")}
-    bg, text = depth_colors.get(depth, ("#f3f4f6", "#374151"))
+    depth_colors = {
+        "초급": ("#d1fae5", "#065f46"),
+        "중급": ("#fef3c7", "#92400e"),
+        "고급": ("#ede9fe", "#5b21b6"),
+    }
+    bg, text = depth_colors.get(depth, ("#f0faf8", "#0d9488"))
 
     st.markdown("**AI 분석 결과**")
     col1, col2 = st.columns(2)
     with col1:
         st.markdown(
-            f'<div style="background:#eff6ff;border-radius:10px;padding:14px;">'
-            f'<div style="font-size:11px;font-weight:700;color:#3b82f6;margin-bottom:4px;">추정 세부 주제</div>'
-            f'<div style="font-size:16px;font-weight:700;color:#1e40af;">{subtopic}</div></div>',
+            f'<div style="background:#f0faf8;border:1px solid #c9e6e1;border-radius:10px;padding:14px;">'
+            f'<div style="font-size:11px;font-weight:700;color:#0d9488;margin-bottom:4px;">추정 세부 주제</div>'
+            f'<div style="font-size:16px;font-weight:700;color:#0a5c52;">{subtopic}</div></div>',
             unsafe_allow_html=True,
         )
     with col2:
@@ -86,14 +95,15 @@ def _render_analysis(analysis: dict):
         )
     if rationale:
         st.markdown(
-            f'<div style="background:#f8fafc;border-radius:8px;padding:12px;font-size:13px;color:#6b7280;margin-top:10px;">💬 {rationale}</div>',
+            f'<div style="background:#f0faf8;border-left:3px solid #0d9488;border-radius:0 8px 8px 0;'
+            f'padding:12px 14px;font-size:13px;color:#374151;margin-top:10px;">{rationale}</div>',
             unsafe_allow_html=True,
         )
 
     st.markdown("")
     col_yes, col_no = st.columns(2)
     with col_yes:
-        if st.button("✅ 맞아요, 다음으로", type="primary", use_container_width=True):
+        if st.button("맞아요, 다음으로", type="primary", use_container_width=True):
             st.session_state.step2_confirmed = True
             st.session_state.current_step = 3
             for k in ["follow_up_questions", "user_answers", "q3_idx", "refined_topic",
@@ -108,6 +118,6 @@ def _render_analysis(analysis: dict):
                     st.session_state[k] = None
             st.rerun()
     with col_no:
-        if st.button("✏️ 수정할게요", use_container_width=True):
+        if st.button("수정할게요", use_container_width=True):
             st.session_state.initial_analysis = None
             st.rerun()

@@ -17,7 +17,7 @@ def render():
         st.session_state.current_step = 4
         st.rerun()
 
-    st.markdown('<div class="section-header">📚 학습 자료 추천</div>', unsafe_allow_html=True)
+    st.markdown('<div class="section-header">학습 자료 추천</div>', unsafe_allow_html=True)
     st.markdown('<div class="section-subheader">로드맵 단계별 맞춤 자료를 모았어요.</div>', unsafe_allow_html=True)
 
     grade = st.session_state.get("grade", "고1")
@@ -29,7 +29,7 @@ def render():
     system, prompt = build_prompt(roadmap, topic, grade, lt)
     if not prompt_panel(system, prompt, "resources",
                         spinner_text="AI가 단계별 자료를 추천하고 있어요...",
-                        btn_label="📚 자료 추천받기"):
+                        btn_label="자료 추천받기"):
         return
 
     resources = st.session_state.resources
@@ -43,7 +43,7 @@ def render():
     _render_resources(resources, roadmap)
 
     st.markdown("")
-    if st.button("📰 뉴스·동향 보기 →", type="primary", use_container_width=True):
+    if st.button("뉴스·동향 보기", type="primary", use_container_width=True):
         st.session_state.current_step = 6
         st.rerun()
 
@@ -89,8 +89,8 @@ def _render_card(item: dict):
         if is_search and url else ""
     )
     link_html = (
-        f'<a href="{url}" target="_blank" style="color:#3b82f6;font-weight:600;font-size:13px;">'
-        f'🔗 바로가기{caveat}</a>'
+        f'<a href="{url}" target="_blank" style="color:#0d9488;font-weight:600;font-size:13px;">'
+        f'바로가기{caveat}</a>'
         if url else ""
     )
 

@@ -9,7 +9,7 @@ def render():
         st.session_state.current_step = 9
         st.rerun()
 
-    st.markdown('<div class="section-header">🌱 성찰·저장</div>', unsafe_allow_html=True)
+    st.markdown('<div class="section-header">성찰·저장</div>', unsafe_allow_html=True)
     st.markdown('<div class="section-subheader">탐구 여정을 마무리하고 다음 방향을 확인해요.</div>', unsafe_allow_html=True)
 
     grade = st.session_state.get("grade", "고1")
@@ -22,7 +22,7 @@ def render():
     system, prompt = build_prompt(topic, overall_score, grade, lt)
     if not prompt_panel(system, prompt, "next_step_result",
                         spinner_text="AI가 다음 탐구 방향을 제안하고 있어요...",
-                        btn_label="🌱 다음 방향 제안받기"):
+                        btn_label="다음 방향 제안받기"):
         return
 
     next_result = st.session_state.next_step_result
@@ -43,9 +43,9 @@ def _render_next(nr: dict):
     if next_dir:
         st.markdown("**다음 탐구 방향**")
         st.markdown(
-            f'<div style="background:#eff6ff;border-left:5px solid #3b82f6;border-radius:0 12px 12px 0;'
+            f'<div style="background:#f0faf8;border-left:5px solid #0d9488;border-radius:0 12px 12px 0;'
             f'padding:16px 20px;margin-bottom:12px;">'
-            f'<div style="font-size:15px;font-weight:600;color:#1e40af;line-height:1.6;">{next_dir}</div>'
+            f'<div style="font-size:15px;font-weight:600;color:#0a5c52;line-height:1.6;">{next_dir}</div>'
             f'</div>',
             unsafe_allow_html=True,
         )
@@ -58,13 +58,13 @@ def _render_next(nr: dict):
                 label = t.get("topic", "")
                 conn = t.get("connection", "")
                 tags_html += (
-                    f'<span title="{conn}" style="background:#dbeafe;color:#1d4ed8;border-radius:20px;'
+                    f'<span title="{conn}" style="background:#ccede9;color:#0a5c52;border-radius:20px;'
                     f'padding:4px 12px;font-size:13px;font-weight:600;margin:3px;display:inline-block;'
                     f'cursor:default;">{label}</span>'
                 )
             else:
                 tags_html += (
-                    f'<span style="background:#dbeafe;color:#1d4ed8;border-radius:20px;'
+                    f'<span style="background:#ccede9;color:#0a5c52;border-radius:20px;'
                     f'padding:4px 12px;font-size:13px;font-weight:600;margin:3px;display:inline-block;">{t}</span>'
                 )
         st.markdown(f'<div style="margin-bottom:12px;">{tags_html}</div>', unsafe_allow_html=True)
@@ -96,7 +96,7 @@ def _render_download(topic: str):
     md = build_markdown()
     fname = f"학습기록_{topic[:20].replace(' ', '_')}.md"
     st.download_button(
-        label="📥 마크다운으로 내보내기",
+        label="마크다운으로 내보내기",
         data=md.encode("utf-8"),
         file_name=fname,
         mime="text/markdown",

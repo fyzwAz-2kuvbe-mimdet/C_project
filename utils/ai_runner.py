@@ -38,11 +38,16 @@ def prompt_panel(
     if is_done(result_key):
         return True
 
-    if st.checkbox("프롬프트 보기 / 복사", key=f"_show_{result_key}"):
+    show_key = f"_show_{result_key}"
+    if show_key not in st.session_state:
+        st.session_state[show_key] = False
+    if st.button("프롬프트 보기 / 숨기기", key=f"_toggle_{result_key}"):
+        st.session_state[show_key] = not st.session_state[show_key]
+    if st.session_state[show_key]:
         st.caption("아래 내용을 복사해서 ChatGPT, Claude 등 다른 AI에도 사용할 수 있어요.")
         st.code(prompt, language="text")
 
-    tab_auto, tab_manual = st.tabs(["🤖 AI 자동 전송", "✍️ 직접 붙여넣기"])
+    tab_auto, tab_manual = st.tabs(["AI 자동 전송", "직접 붙여넣기"])
 
     with tab_auto:
         st.caption("Gemini AI가 자동으로 분석합니다.")

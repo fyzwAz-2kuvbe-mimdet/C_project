@@ -8,18 +8,18 @@ _STEP_NAMES = {
     7: "핵심질문", 8: "결과작성", 9: "AI첨삭",   10: "성찰저장",
 }
 _PHASES = [
-    ("Phase 1", "#3b82f6", [1, 2, 3]),
-    ("Phase 2", "#8b5cf6", [4, 5, 6]),
-    ("Phase 3", "#10b981", [7, 8]),
-    ("Phase 4", "#f59e0b", [9, 10]),
+    ("Phase 1", "#0d9488", [1, 2, 3]),
+    ("Phase 2", "#0891b2", [4, 5, 6]),
+    ("Phase 3", "#059669", [7, 8]),
+    ("Phase 4", "#0a5c52", [9, 10]),
 ]
 _STEP_COLOR = {s: c for _, c, steps in _PHASES for s in steps}
 
 
 def render_sidebar():
     st.markdown(
-        "<div style='font-size:20px;font-weight:800;color:#111827;margin-bottom:2px;'>🎓 AI 학습 멘토</div>"
-        "<div style='font-size:12px;color:#6b7280;margin-bottom:12px;'>10단계 탐구 멘토링</div>",
+        "<div style='font-size:20px;font-weight:800;color:#0a5c52;margin-bottom:2px;'>AI 학습 멘토</div>"
+        "<div style='font-size:12px;color:#4b7772;margin-bottom:12px;'>10단계 탐구 멘토링</div>",
         unsafe_allow_html=True,
     )
     st.divider()
@@ -38,7 +38,7 @@ def render_sidebar():
     st.markdown("**학습 유형**")
     types = get_all_types()
     type_ids = list(types.keys())
-    labels = [f"{v['icon']} {v['name']}" for v in types.values()]
+    labels = [v['name'] for v in types.values()]
     cur = st.session_state.get("learning_type", "hana")
     sel = st.radio("유형", labels, index=type_ids.index(cur), label_visibility="collapsed")
     sel_id = type_ids[labels.index(sel)]
@@ -54,7 +54,7 @@ def render_sidebar():
     )
     st.markdown(
         f"""<div style="border-left:4px solid {c};background:{c}11;border-radius:0 10px 10px 0;padding:12px 14px;margin-top:8px;">
-          <div style="font-size:13px;font-weight:700;color:{c};margin-bottom:3px;">{info['icon']} {info['name']}</div>
+          <div style="font-size:13px;font-weight:700;color:{c};margin-bottom:3px;">{info['name']}</div>
           <div style="font-size:11px;color:#374151;margin-bottom:6px;">{info['description']}</div>
           <div style="font-size:10px;font-weight:700;color:#9ca3af;margin-bottom:3px;">평가 기준</div>
           <ul style="margin:0;padding-left:13px;">{criteria_li}</ul>
@@ -76,11 +76,11 @@ def render_sidebar():
     # ── 진행 상태 ──
     st.markdown(
         f"<div style='font-size:12px;color:#6b7280;'>"
-        f"현재: <strong style='color:#111827;'>{current}단계 — {_STEP_NAMES[current]}</strong></div>",
+        f"현재: <strong style='color:#0a5c52;'>{current}단계 — {_STEP_NAMES[current]}</strong></div>",
         unsafe_allow_html=True,
     )
     if current > 1:
-        if st.button("🔄 처음부터 다시", use_container_width=True):
+        if st.button("처음부터 다시", use_container_width=True):
             from utils.session import reset_all
             reset_all()
             st.rerun()

@@ -9,7 +9,7 @@ def render():
         st.session_state.current_step = 8
         st.rerun()
 
-    st.markdown('<div class="section-header">🤖 AI 첨삭</div>', unsafe_allow_html=True)
+    st.markdown('<div class="section-header">AI 첨삭</div>', unsafe_allow_html=True)
     st.markdown('<div class="section-subheader">학습 유형 기준으로 결과물을 평가하고 개선 방향을 알려드려요.</div>', unsafe_allow_html=True)
 
     grade = st.session_state.get("grade", "고1")
@@ -20,7 +20,7 @@ def render():
     system, prompt = build_prompt(student_text, format_type, grade, lt)
     if not prompt_panel(system, prompt, "feedback",
                         spinner_text="AI가 결과물을 분석하고 있어요...",
-                        btn_label="🤖 AI 첨삭 시작"):
+                        btn_label="AI 첨삭 시작"):
         return
 
     feedback = st.session_state.feedback
@@ -34,7 +34,7 @@ def render():
     _render_feedback(feedback, lt)
 
     st.markdown("")
-    if st.button("🌱 성찰·다음 방향 →", type="primary", use_container_width=True):
+    if st.button("성찰·다음 방향", type="primary", use_container_width=True):
         st.session_state.current_step = 10
         st.rerun()
 
@@ -50,7 +50,7 @@ def _render_feedback(fb: dict, lt: str):
     pct = min(max(overall, 0), 100)
     bar_color = "#10b981" if pct >= 70 else ("#f59e0b" if pct >= 50 else "#ef4444")
     st.markdown(
-        f'<div style="background:#fff;border:1px solid #e5e7eb;border-radius:12px;padding:20px 24px;margin-bottom:20px;">'
+        f'<div style="background:#fff;border:1px solid #c9e6e1;border-radius:12px;padding:20px 24px;margin-bottom:20px;">'
         f'  <div style="font-size:12px;font-weight:700;color:#6b7280;margin-bottom:6px;">종합 점수</div>'
         f'  <div style="font-size:40px;font-weight:800;color:{bar_color};">{overall}<span style="font-size:18px;color:#9ca3af;">/100</span></div>'
         f'  <div class="score-bar-bg" style="margin-top:10px;">'
@@ -89,7 +89,7 @@ def _render_feedback(fb: dict, lt: str):
             for s in strengths:
                 point = s.get("point", s) if isinstance(s, dict) else s
                 st.markdown(
-                    f'<div style="background:#d1fae5;border-radius:8px;padding:10px 14px;margin-bottom:6px;font-size:13px;color:#065f46;">✅ {point}</div>',
+                    f'<div style="background:#d1fae5;border-radius:8px;padding:10px 14px;margin-bottom:6px;font-size:13px;color:#065f46;">{point}</div>',
                     unsafe_allow_html=True,
                 )
     with col2:
@@ -98,7 +98,7 @@ def _render_feedback(fb: dict, lt: str):
             for w in weaknesses:
                 point = w.get("point", w) if isinstance(w, dict) else w
                 st.markdown(
-                    f'<div style="background:#fef3c7;border-radius:8px;padding:10px 14px;margin-bottom:6px;font-size:13px;color:#92400e;">💡 {point}</div>',
+                    f'<div style="background:#fef3c7;border-radius:8px;padding:10px 14px;margin-bottom:6px;font-size:13px;color:#92400e;">{point}</div>',
                     unsafe_allow_html=True,
                 )
 
@@ -109,12 +109,12 @@ def _render_feedback(fb: dict, lt: str):
             after = item.get("after", "")
             reason = item.get("reason", "")
             st.markdown(
-                f'<div style="background:#fff;border:1px solid #e5e7eb;border-radius:10px;padding:14px;margin-bottom:10px;">'
+                f'<div style="background:#fff;border:1px solid #c9e6e1;border-radius:10px;padding:14px;margin-bottom:10px;">'
                 f'  <div style="font-size:12px;font-weight:700;color:#ef4444;margin-bottom:4px;">Before</div>'
                 f'  <div style="font-size:13px;color:#374151;margin-bottom:8px;">{before}</div>'
                 f'  <div style="font-size:12px;font-weight:700;color:#10b981;margin-bottom:4px;">After</div>'
                 f'  <div style="font-size:13px;color:#374151;margin-bottom:8px;">{after}</div>'
-                f'  {"<div style=\"font-size:12px;color:#6b7280;\">💬 " + reason + "</div>" if reason else ""}'
+                f'  {"<div style=\"font-size:12px;color:#6b7280;\">" + reason + "</div>" if reason else ""}'
                 f'</div>',
                 unsafe_allow_html=True,
             )

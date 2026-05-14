@@ -8,7 +8,7 @@ def render():
         st.session_state.current_step = 6
         st.rerun()
 
-    st.markdown('<div class="section-header">❓ 핵심 탐구 질문</div>', unsafe_allow_html=True)
+    st.markdown('<div class="section-header">핵심 탐구 질문</div>', unsafe_allow_html=True)
     st.markdown('<div class="section-subheader">질문에 하나씩 답하면 결과물 작성의 뼈대가 됩니다.</div>', unsafe_allow_html=True)
 
     grade = st.session_state.get("grade", "고1")
@@ -52,22 +52,22 @@ def _render_one_by_one(questions: list):
     if idx < total:
         # 진행률
         st.markdown(
-            f'<div style="background:#f3f4f6;border-radius:999px;height:6px;margin-bottom:16px;">'
-            f'<div style="background:#10b981;width:{int(idx/total*100)}%;height:100%;border-radius:999px;"></div>'
+            f'<div style="background:#dff0ec;border-radius:999px;height:6px;margin-bottom:16px;">'
+            f'<div style="background:#0d9488;width:{int(idx/total*100)}%;height:100%;border-radius:999px;"></div>'
             f'</div>',
             unsafe_allow_html=True,
         )
         st.markdown(
-            f'<div style="font-size:12px;color:#6b7280;margin-bottom:8px;">핵심 질문 {idx+1} / {total}</div>',
+            f'<div style="font-size:12px;color:#4b7772;margin-bottom:8px;">핵심 질문 {idx+1} / {total}</div>',
             unsafe_allow_html=True,
         )
 
         q = questions[idx]
         st.markdown(
-            f'<div style="background:#eff6ff;border-left:5px solid #3b82f6;border-radius:0 12px 12px 0;'
+            f'<div style="background:#f0faf8;border-left:5px solid #0d9488;border-radius:0 12px 12px 0;'
             f'padding:16px 20px;margin-bottom:12px;">'
-            f'<div style="font-size:12px;font-weight:700;color:#3b82f6;margin-bottom:6px;">핵심 질문 {idx+1}</div>'
-            f'<div style="font-size:16px;font-weight:600;color:#1e40af;">{q}</div>'
+            f'<div style="font-size:12px;font-weight:700;color:#0d9488;margin-bottom:6px;">핵심 질문 {idx+1}</div>'
+            f'<div style="font-size:16px;font-weight:600;color:#0a5c52;">{q}</div>'
             f'</div>',
             unsafe_allow_html=True,
         )
@@ -105,20 +105,20 @@ def _render_one_by_one(questions: list):
     for i, q in enumerate(questions):
         a = answers.get(str(i), "").strip()
         st.markdown(
-            f'<div style="background:#f8fafc;border-radius:10px;padding:12px 16px;margin-bottom:8px;">'
-            f'<div style="font-size:11px;font-weight:700;color:#6b7280;margin-bottom:4px;">Q{i+1}. {q}</div>'
+            f'<div style="background:#fff;border:1px solid #c9e6e1;border-radius:10px;padding:12px 16px;margin-bottom:8px;">'
+            f'<div style="font-size:11px;font-weight:700;color:#4b7772;margin-bottom:4px;">Q{i+1}. {q}</div>'
             f'<div style="font-size:13px;color:#374151;">{a if a else "(미작성)"}</div>'
             f'</div>',
             unsafe_allow_html=True,
         )
 
-    if st.button("✏️ 답변 다시하기", use_container_width=False):
+    if st.button("답변 다시하기", use_container_width=False):
         st.session_state.q7_idx = 0
         st.session_state.question_answers = {}
         st.rerun()
 
     st.markdown("")
     any_answered = any(answers.get(str(i), "").strip() for i in range(len(questions)))
-    if st.button("✍️ 결과물 작성하기 →", type="primary", use_container_width=True, disabled=not any_answered):
+    if st.button("결과물 작성하기", type="primary", use_container_width=True, disabled=not any_answered):
         st.session_state.current_step = 8
         st.rerun()

@@ -13,7 +13,7 @@ _PHASES = [
     (4, "Phase 4 성찰", [9, 10]),
 ]
 
-_PC = {1: "#3b82f6", 2: "#8b5cf6", 3: "#10b981", 4: "#f59e0b"}
+_PC = {1: "#0d9488", 2: "#0891b2", 3: "#059669", 4: "#0a5c52"}
 _STEP_PC = {s: _PC[pn] for pn, _, steps in _PHASES for s in steps}
 
 STEP_W = 52   # px — each step cell width
@@ -97,7 +97,7 @@ def render_progress(current_step: int):
             )
 
     html = (
-        '<div style="background:#fff;border-bottom:1px solid #e5e7eb;'
+        '<div style="background:#f0faf8;border-bottom:1px solid #c9e6e1;'
         'padding:12px 0 0;margin-bottom:20px;overflow-x:auto;">'
         '<table cellspacing="0" cellpadding="0" '
         'style="border-collapse:collapse;border:0;margin:0 auto;">'
